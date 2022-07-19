@@ -1,4 +1,7 @@
 #include <unordered_set>
+#include <locale>
+#include <codecvt>
+
 #include <ifcpp/IFC4/include/IfcBuildingStorey.h>
 #include <ifcpp/IFC4/include/IfcGloballyUniqueId.h>
 #include <ifcpp/IFC4/include/IfcLabel.h>
@@ -13,6 +16,7 @@
 #include <c3dservice-Api/ApiConfiguration.h>
 #include <c3dservice-Api/ApiClient.h>
 #include <c3dservice-Api/api/MonitorApi.h>
+#include <c3dservice-Api/api/CacheApi.h>
 
 using namespace org::openapitools::client;
 
@@ -27,9 +31,10 @@ public:
     std::vector<shared_ptr<MyIfcTreeItem> > m_children;
 };
 
-shared_ptr<MyIfcTreeItem> resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set<int>& set_visited)
+std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set<int>& set_visited)
 {
-    shared_ptr<MyIfcTreeItem> item;
+    //shared_ptr<MyIfcTreeItem> item;
+    std::shared_ptr<api::ComposeModelNode> item(new api::ComposeModelNode);
     
     shared_ptr<IfcObjectDefinition> obj_def = dynamic_pointer_cast<IfcObjectDefinition>(obj);
     if (obj_def)
@@ -40,24 +45,30 @@ shared_ptr<MyIfcTreeItem> resolveTreeItems(shared_ptr<BuildingObject> obj, std::
         }
         set_visited.insert(obj_def->m_entity_id);
 
-        item = std::shared_ptr<MyIfcTreeItem>(new MyIfcTreeItem());
-        item->m_ifc_class_name = obj_def->className();
+        //item = std::shared_ptr<MyIfcTreeItem>(new MyIfcTreeItem());
+        item = std::shared_ptr<api::ComposeModelNode>(new api::ComposeModelNode);
+        //item->m_ifc_class_name = obj_def->className();
 
         // access some attributes of IfcObjectDefinition
         if (obj_def->m_GlobalId)
         {
-            item->m_entity_guid = obj_def->m_GlobalId->m_value;
+            //item->m_entity_guid = obj_def->m_GlobalId->m_value;
         }
+
+        static const std::string attr_name = "name";
+        static const std::string attr_id   = "id";
 
         if (obj_def->m_Name)
         {
-            item->m_name = obj_def->m_Name->m_value;
-            //std::wcout << item->m_name << std::endl;
+            std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+            item->getAttrs()[attr_name] = convert.to_bytes(obj_def->m_Name->m_value);
         }
 
         if (obj_def->m_Description)
         {
-            item->m_description = obj_def->m_Description->m_value;
+            //std::wcout << obj_def->m_Description->m_value << std::endl;
+            //std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+            //item->getAttrs()[attr_id] = convert.to_bytes(obj_def->m_Description->m_value);
         }
         
         // check if there are child elements of current IfcObjectDefinition
@@ -72,10 +83,11 @@ shared_ptr<MyIfcTreeItem> resolveTreeItems(shared_ptr<BuildingObject> obj, std::
                 std::vector<shared_ptr<IfcObjectDefinition> >& vec_related_objects = rel_agg->m_RelatedObjects;
                 for (shared_ptr<IfcObjectDefinition> child_obj_def : vec_related_objects)
                 {
-                    shared_ptr<MyIfcTreeItem> child_tree_item = resolveTreeItems(child_obj_def, set_visited);
+                    auto child_tree_item = resolveTreeItems(child_obj_def, set_visited);
                     if (child_tree_item)
                     {
-                        item->m_children.push_back(child_tree_item);
+                        //item->m_children.push_back(child_tree_item);
+                        item->getChildren().push_back(child_tree_item);
                     }
                 }
             }
@@ -95,10 +107,10 @@ shared_ptr<MyIfcTreeItem> resolveTreeItems(shared_ptr<BuildingObject> obj, std::
 
                     for (shared_ptr<IfcProduct> related_product : vec_related_elements)
                     {
-                        shared_ptr<MyIfcTreeItem> child_tree_item = resolveTreeItems(related_product, set_visited);
+                        auto child_tree_item = resolveTreeItems(related_product, set_visited);
                         if (child_tree_item)
                         {
-                            item->m_children.push_back(child_tree_item);
+                            item->getChildren().push_back(child_tree_item);
                         }
                     }
                 }
@@ -129,9 +141,13 @@ int main()
     }
     catch(const std::exception& e)
     {
-        std::cout << "servce is not active" << std::endl;
+        std::cout << "servce is not active" << std::endl 
+        << e.what() << std::endl;
         return 1;
     }
+
+    // init 
+    std::shared_ptr<api::CacheApi> cache(new api::CacheApi(apiClient));
 
     // 1: create an IFC model and a reader for IFC files in STEP format:
     shared_ptr<BuildingModel> ifc_model(new BuildingModel());
@@ -143,7 +159,19 @@ int main()
     // 4: traverse tree structure of model, starting at root object (IfcProject)
     shared_ptr<IfcProject> ifc_project = ifc_model->getIfcProject();
     std::unordered_set<int> set_visited;
-    shared_ptr<MyIfcTreeItem> root_item = resolveTreeItems(ifc_project, set_visited);
+    auto root_item = resolveTreeItems(ifc_project, set_visited);
 
-    // you can access the model as a flat map (step 3), or a tree (step 4), depending on your requirements
+    try
+    {
+        auto task = cache->cacheComposeModel(root_item)
+        //.then([=](pplx::task<std::string> uuid){
+        //    std::cout << "Model is chached in service."<< uuid.get() << std::endl;
+        //})
+        .wait();
+    }
+    catch(const std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+        return 1;
+    }
 }
