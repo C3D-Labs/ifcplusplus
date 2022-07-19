@@ -1,0 +1,19 @@
+{
+    "spaces": 2,
+    "generator-cli": {
+      "version": "6.0.0",
+      "generators": {
+        "v2.0": {
+          "generatorName": "cpp-restsdk",
+          "output": "#{cwd}/api-client",
+          "glob": "./api-client/swagger.yaml",
+          "template-dir":"./api-client/templates",
+          "additionalProperties": {
+            "packageName": "c3dservice-api",
+            "packageVersion":"1.0.0"
+          }
+        }
+      }
+    }
+}
+  

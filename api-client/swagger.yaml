@@ -1,0 +1,704 @@
+#################################################################
+### swagger.yaml
+###
+### The given file describes paths and models of c3d service
+#################################################################
+
+swagger: "2.0"
+info:
+  description: "Open API спецификация к REST API \
+    микросервиса C3D Web Vision." 
+  version: "1.2.1"
+  title: "OpenAPI C3D-Service"
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "info@c3dlabs.com"
+host: "localhost:12344"
+basePath: "/v1"
+schemes:
+- http
+tags:
+- name: "Session"
+  description: "Управление пользовательскими соединениями и рабочими пространствами"
+- name: "Cache"
+  description: "Управление кешем геометрии  для быстрой загрузки"
+- name: "Model"
+  description: "Управление структурой и атрибутами модели"
+- name: "Monitor"
+  description: "Отслеживание состояния сервиса"
+
+
+#################################################################
+paths:
+  /sessions:
+    get:
+      tags:
+      - "Session"
+      summary: "Возвращает список всех сессий текущего сервиса"
+      operationId: "getSessionsList"
+      produces:
+        - "application/json"
+      responses:
+        200: # OK
+          description: "Список успешно получен"
+          schema:
+            type: object
+            properties:
+              users: 
+                type: array
+                description: "Перечень активных пользователей"
+                items:
+                  $ref: "#/definitions/UUID"  
+              workspaces: 
+                type: array
+                description: "Перечень активных рабочих пространств"
+                items:
+                  $ref: "#/definitions/UUID" 
+                  
+  /sessions/users:
+    get:
+      tags:
+      - "Session"
+      summary: "Возвращает список активных пользователей"  
+      operationId: "getUsersList"
+      responses:
+        200: # OK
+          description: "Список успешно получен"
+          schema:
+            type: array
+            description: "Перечень пользователей"
+            items:
+              $ref: "#/definitions/User"  
+              
+  /sessions/workspaces:
+    get:
+      tags:
+      - "Session"
+      summary: "Возвращает список активных рабочих пространств"  
+      operationId: "getWorkspacesList"
+      responses:
+        200: # OK
+          description: "Список успешно получен"
+          schema:
+            type: array
+            description: "Перечень рабочих пространств"
+            items:
+              $ref: "#/definitions/Workspace"
+    post:
+      tags:
+      - "Session"    
+      summary: "Создает новое рабочее пространство"
+      operationId: "CreateWorkspace"
+      responses:
+        200: # OK
+          description: "Новое рабочее пространство успешно создано"
+          schema:
+            type: object
+            properties:
+              uuid:
+                $ref: "#/definitions/UUID"
+            
+          
+  /sessions/workspaces/{uuid}:
+    parameters:
+      - name: "uuid"
+        in: path
+        required: true
+        type: string
+        format: uuid
+        description: "Идентификатор рабочего пространства"
+    get:
+      tags:
+      - "Session"
+      summary: "Возвращает параметры рабочего пространства"
+      operationId: "getWorkspaceInfo"
+      responses:
+        200: # OK
+          description: "Список успешно получен"
+          schema:
+           $ref: "#/definitions/Workspace"
+          
+          
+  /sessions/workspaces/{uuid}/models:
+    parameters:
+      - name: "uuid"
+        in: path
+        required: true
+        type: string
+        format: uuid
+        description: "Идентификатор рабочего пространства"
+    post:
+      tags:
+      - "Session"    
+      summary: "Добаляет список моделей к рабочему пространству"
+      operationId: "appendModels"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: data
+        required: true
+        schema: 
+          type: object
+          title : appendModelsBody
+          properties:
+            withCleaning: 
+              type: boolean
+              default: true
+            models:
+              type: array
+              items: 
+                type: string
+                example: "store://path/to/model"
+      responses:
+        200: # OK
+          description: "Модели успешно добавлены"
+        404: # Not Found
+          description: "Рабочее пространство не найдено"
+    delete:
+      tags:
+      - "Session"    
+      summary: "Удаляет список моделей из рабочего пространства"
+      operationId: "removeModels"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: models
+        required: true
+        schema: 
+          type: object
+          properties:
+            models:
+              type: array
+              items: 
+                type: string
+                example: "store://path/to/model"
+      responses:
+        200: # OK
+          description: "Модели успешно удалены"
+        404: # Not Found
+          description: "Рабочее пространство не найдено"
+
+  /cache/geometry:        
+    post:
+      tags:
+      - "Cache"
+      summary: "Сгенерировать кэш для графического представления геометрии"
+      operationId: "cacheGeometry"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: body
+        description: "Необходимые данные для выполнения запроса"
+        required: true
+        schema:
+          type: object
+          properties:
+            url: 
+              type: string
+              description: "Путь к модели"
+              example: "store://path/to/model"
+            fileContent: 
+              type: string
+              format: byte
+              description: "Содержимое файла в формате base64 (используется, в случае, если файл передается с клиента)"  
+              example: "U3dhZ2dlciByb2Nrcw=="
+            builder:
+              type: string
+              description: "Reader to read data"
+              example: "c3d"
+      responses:
+        202: # Accepted
+          description: "Процесс генерации успешно запущен."
+          schema:
+            $ref: "#/definitions/UUID"
+        400: # Bad Request
+          description: "Не удалось выполнить запрос. Ошибка в предоставленных данных."
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Причина неудачи"
+        409: # Conflict
+          description: "Не удалось запустить процесс генерации. Процесс уже был запущен и еще не окончен."
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+
+  /cache/geometry/{geometryUUID}:
+    parameters:
+    - name: "geometryUUID"
+      in: path
+      required: true
+      type: string
+      format: uuid
+      description: "Идентификатор геометрии"
+    get:
+      tags:
+      - "Cache"
+      summary: "Получить информацию о кеше геометрии"
+      operationId: "getGeometry"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+      - in: body
+        name: model
+        description: "Необходимые данные для идентификации кэша"
+        schema:
+          $ref: "#/definitions/CachedModel"
+      responses:
+        200: # OK
+          description: "Кэш для указанной геометрии успешно найден, и для него получены сведения"
+          schema:
+            $ref: "#/definitions/CachedModel"
+        400: # Bad Request
+          description: "Не удалось найти кэшированную геометрию. Ошибка в предоставленных данных"
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Причина неудачи"
+        404: # Not Found
+          description: "Данная модель не существует, еще не была кэширована или произошла ошибка во время кэширования"
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+
+    delete:
+      tags:
+      - "Cache"
+      summary: "Очистить кэш геометрии"
+      operationId: "clearGeometry"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: model
+        description: "Необходимые данные для исполнения запроса"
+        schema:
+          $ref: "#/definitions/CachedModel"
+      responses:
+        200: # OK
+          description: "Кэш для указанной моделей успешно очищен, либо не существовал"
+        404: # Not Found          
+          description: "Данная модель не существует, еще не была кэширована или произошла ошибка во время кэширования"
+        400: # Bad Request
+          description: "Не удалось выполнить запрос. Ошибка в предоставленных данных."
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Причина неудачи"
+        423: # Locked
+          description: "Не удалось очистить кэш в связи с незавершенным процессом \
+          по кэшированию данной геометрии"
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+          
+  /cache/models:
+    post:
+      tags:
+      - "Cache"
+      summary: "Запустить генерацию кэша для модели"
+      operationId: "cacheModel"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: data
+        description: "Необходимые данные для выполнения запроса"
+        required: true
+        schema:
+          type: object
+          properties:
+            url: 
+              type: string
+              description: "Перечень активных пользователей"
+              example: "store://path/to/model"
+            extensions: 
+              type: array
+              description: "Перечень активных рабочих пространств"
+              items:
+                type: string
+                example: ".c3d"
+                description: "Расширения файлов для генерации кеша, если url папка"
+            fileContent:
+              type: string
+              format: byte
+              description: "Содержимое файла в формате base64 (используется, в случае, если файл передается с клиента)"  
+              example: "U3dhZ2dlciByb2Nrcw=="
+      responses:
+        202: # Accepted
+          description: "Процесс генерации успешно запущен. Обратите внимание, \
+          что вам необходимо отслеживать прогресс методом GET /cache/models"
+        400: # Bad Request
+          description: "Не удалось запустить процесс генерации. Ошибка в предоставленных данных."
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Приичина неудачи"
+        409: # Conflict
+          description: "Не удалось запустить процесс генерации. Процесс уже был запущен и еще не окончен."
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+    get:
+      tags:
+      - "Cache"
+      summary: "Получить информацию о кэше модели"
+      operationId: "getCache"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+      - in: body
+        name: model
+        description: "Необходимые данные для идентификации кэша"
+        schema:
+          $ref: "#/definitions/CachedModel"
+      responses:
+        200: # OK
+          description: "Кэш для указанной модели успешно найден, и для него получены сведения"
+          schema:
+            $ref: "#/definitions/CachedModel"
+        400: # Bad Request
+          description: "Не удалось найти кэшированную модель. Ошибка в предоставленных данных"
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Причина неудачи"
+        404: # Not Found
+          description: "Данная модель не существует, еще не была кэширована или произошла ошибка во время кэширования"
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+
+    delete:
+      tags:
+      - "Cache"
+      summary: "Очистить кэш модели"
+      operationId: "clearCache"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: model
+        description: "Необходимые данные для исполнения запроса"
+        schema:
+          $ref: "#/definitions/CachedModel"
+      responses:
+        200: # OK
+          description: "Кэш для указанной моделей успешно очищен, либо не существовал"
+        400: # Bad Request
+          description: "Не удалось выполнить запрос. Ошибка в предоставленных данных."
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Причина неудачи"
+        423: # Locked
+          description: "Не удалось очистить кэш в связи с незавершенным процессом \
+          по кэшированию данной модели"
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+  
+  /cache/compose-model:
+    post:
+      tags:
+      - "Cache"
+      summary: "Запустить генерацию кэша для модели"
+      operationId: "cacheComposeModel"
+      consumes:
+        - "application/json"
+      parameters:
+      - in: body
+        name: data
+        description: "Необходимые данные для выполнения запроса"
+        required: true
+        schema: 
+          $ref: '#/definitions/ComposeModelNode'
+      responses:
+        200: # OK
+          description: "Модель удачно создана"
+          schema:
+            $ref: "#/definitions/UUID"
+        400: # Bad Request
+          description: "Не удалось запустить процесс генерации. Ошибка в предоставленных данных."
+          schema:
+            type: string
+            example: "input URL format is invalid"
+            description: "Причина неудачи"
+        500: # Internal Service Error
+          description: "Во время обработки запроса возникла ошибка в работе сервиса"
+
+  /models/{modelUUID}/nodes:
+    get:
+      tags:
+      - "Model"
+      summary: "Получить дерево сборки с атрибутами"
+      operationId: "getNodes"
+      parameters:
+      - name: "X-Session-ID"
+        in: header
+        description: "UUID сессии"
+        required: true
+        type: string
+        format: uuid
+      - name: "modelUUID"
+        in: path
+        description: "UUID модели сборки загруженной в сессию"
+        required: true
+        type: string
+        format: uuid
+      - name: "limit"
+        in: query
+        required: false
+        type: integer
+        description: "Максимальная глубина дерева"
+        default: 100
+        minimum: 1
+      - name: "attrs"
+        in: query
+        type: string
+        description: "Перечень ключей атрибутов для извлечения. Разделяются одним символом ';' (name;density;volume).\
+        Без указания перечня будут извлекаться все имеющиеся атрибуты."
+      responses:
+        200: # OK
+          description: "Сведения об узле успешно получены"
+          schema:
+            $ref: '#/definitions/TreeNode'
+        400: # Bad Request
+          description: "Сессия еще не создана, либо уже закрыта"
+        404: # Not Found
+          description: "Модель с данным UUID не найдена"  
+
+  /models/{modelUUID}/nodes/{nodeUUID}:
+    get:
+      tags:
+      - "Model"
+      summary: "Получить все свойства и дочерние узлы для данного узла"
+      operationId: "getNode"
+      parameters:
+      - name: "X-Session-ID"
+        in: header
+        description: "UUID сессии"
+        required: true
+        type: string
+        format: uuid
+      - name: "modelUUID"
+        in: path
+        description: "UUID модели сборки"
+        required: true
+        type: string
+        format: uuid
+      - name: "nodeUUID"
+        in: path
+        description: "UUID узла сборки"
+        required: true
+        type: string
+        format: uuid
+      - name: "limit"
+        in: query
+        required: false
+        type: integer
+        description: "Максимальная глубина дерева дочерних узлов"
+        default: 100
+      - name: "attrs"
+        in: query
+        required: false
+        type: string
+        description: "Перечень ключей атрибутов для извлечения. Разделяются одним символом ';' (name;density;volume).\
+        Без указания перечня будут извлекаться все имеющиеся атрибуты."
+      responses:
+        200: # OK
+          description: "Сведения об узле успешно получены"
+          schema:
+            $ref: '#/definitions/TreeNode'
+        400: # Bad Request
+          description: "Сессия еще не создана, либо уже закрыта"
+        404: # Not Found
+          description: "Узел или модель с данным UUID не найдены"  
+
+  /monitor/status:
+    get:
+      tags:
+      - "Monitor"
+      summary: "Запросить информацию о состоянии сервиса"
+      operationId: "getStatus"
+      responses:
+        200: # OK
+          description: "Сервис успешно работает"
+            
+
+#------------------------------------
+definitions:
+  #
+  UUID: 
+    type: string
+    #format: uuid
+    example: "aacfd53d-9789-48f9-b5a8-b87099b4a450"
+    description: "Идентификатор"  
+    
+  #
+  Times:
+    type: object
+    properties:
+      created:
+        type: string
+        description: "Дата и время создания сессии"
+        format: date-time
+        readOnly: true
+      updated:
+        type: string
+        description: "Дата и время окончания сессии"
+        format: date-time
+        readOnly: true
+      expired:
+        type: string
+        description: "Дата и время окончания сессии"
+        format: date-time
+        readOnly: true
+
+  #
+  Model:  
+    type: object
+    description: "Графическая модель"
+    properties:
+      uuid:
+        $ref: '#/definitions/UUID'
+      url: 
+        type: string
+        description: "Путь к модели"
+        example: "store://path/to/model"
+
+  #
+  Workspace:
+    type: object
+    description: "Сессия рабочей области"
+    properties:
+      uuid:
+        $ref: '#/definitions/UUID'
+      isDemo: 
+        type: boolean
+        description: "Является ли рабочая область демонстрационной"
+      times:
+        $ref: '#/definitions/Times'
+      users:
+        type: array
+        description: "Перечень подключенных пользователей"
+        items: 
+          $ref: '#/definitions/UUID'
+      models:
+        type: array
+        description: "Перечень используемых моделей"
+        items: 
+          $ref: '#/definitions/Model'
+  #
+  User:
+    type: object
+    description: "Пользовательская сессия"
+    properties:
+      uuid:
+        $ref: '#/definitions/UUID'
+      times:
+        $ref: '#/definitions/Times'
+
+
+  CachedModel:
+    type: object
+    description: "Абстракция кэша модели/геометрии"
+    properties:
+      url:
+        type: string
+        description: "Путь (URL) к исходной модели/геометрии"
+        example: "local://model.c3d"
+      status:
+        type: string
+        description: "Статус генерации кэша"
+        enum:
+          - queried    # Сделан запрос
+          - pending    # Поставлена в очередь
+          - processing # Идет процесс генерации
+          - successed  # Кэш был успешно сгенерирован
+        readOnly: true
+      progress:
+        type: number
+        example: "0.5"
+        description: "Процент генерации кэша"
+        readOnly: true
+
+  TreeNode:
+    type: object
+    description: "Узел сборки модели"
+    properties:
+      uuid:
+        type: string
+        format: uuid
+        description: "Идентификатор узла"
+        readOnly: true
+      attrs:
+        $ref: '#/definitions/NodeAttrbutes'
+      children:
+        type: array
+        description: "Дочерние узлы"
+        items: 
+          $ref: '#/definitions/TreeNode'
+        
+  NodeAttrbutes:
+      type: object
+      description: "Атрибуты узла сборки"
+      additionalProperties:
+        type: string
+
+  ComposeModelNode:
+    type: object
+    description: "Узел сборки модели"
+    properties:
+      uuid:
+        type: string
+        format: uuid
+        description: "Идентификатор узла"
+      attrs:
+        $ref: '#/definitions/NodeAttrbutes'
+        description: "Атрибуты узла"
+      visibility:
+        type: boolean
+        description: "Отображать ли узел"
+        readOnly: true
+      representation:
+        type: string
+        format: uuid
+        description: "Uuid кеша геометрии"
+        readOnly: true
+      children:
+        type: array
+        description: "Дочерние узлы"
+        items: 
+          $ref: '#/definitions/ComposeModelNode'
+      location:
+          $ref: '#/definitions/GeometryLocation'
+      matrix:
+          $ref: '#/definitions/TransformMatrix'
+
+  GeometryLocation:
+    type: object
+    description: "Описание пространственной трансформации"
+    properties:
+      position:
+        type: string
+        description: "Координаты вектора смещения в формате '0.0000;0.0000;0.0000'"
+        readOnly: true
+      rotation:
+        type: string
+        description: "Уголы поворота в радианах вокруг осей в формате '0.0;0.0;0.0'"
+        readOnly: true
+      scale:
+        type: string
+        description: "Коэффициенты масштабирования по осям в формате '1.0;1.0;1.0'"
+        readOnly: true
+
+  TransformMatrix:
+    type: array
+    minItems: 16
+    maxItems: 16
+    items:
+      type: number
+      format: float
+
