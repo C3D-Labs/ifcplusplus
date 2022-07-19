@@ -1,41 +1,21 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
+cmake_minimum_required (VERSION 3.1)
 
-project(IFCPP)
-message(STATUS "------------------------------------------------------------------------")
-
-option(USE_OSG_DEBUG "Use openscenegraph debug library" OFF)
-option(BUILD_STATIC_LIBRARY "Build static library" OFF)
+set(TARGET_NAME web-converter)
+project(TARGET_NAME)
 
 IF(NOT WIN32)
-    IF("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-        IF(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-            SET_PROPERTY(DIRECTORY APPEND PROPERTY
-                COMPILE_DEFINITIONS $<$<CONFIG:Debug>:_DEBUG>
-            )
-        ENDIF()
-    ENDIF()
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ELSE(NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 ENDIF(NOT WIN32)
 
-#set(CARVE_SOURCE_DIR ${IFCPP_SOURCE_DIR}/external/Carve)
-#set(CARVE_BINARY_DIR ${IFCPP_BINARY_DIR})
-#set(IFCPP_CONFIG_DIR "share/IFCPP/cmake")
-#ADD_SUBDIRECTORY (external/Carve)
-ADD_SUBDIRECTORY (IfcPlusPlus)
+add_subdirectory (IfcPlusPlus)
+#add_subdirectory(cpp-api-client)
 
-# Install configuration file
-#INCLUDE(CMakePackageConfigHelpers)
-#set(config_file_input  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/IFCPPConfig.cmake.in")
-#set(config_file_output "${CMAKE_CURRENT_BINARY_DIR}/cmake/IFCPPConfig.cmake")
+add_executable(${TARGET_NAME} src/main.cpp)
 
-#CONFIGURE_PACKAGE_CONFIG_FILE(
-#  ${config_file_input}
-#  ${config_file_output}
-#  INSTALL_DESTINATION ${IFCPP_CONFIG_DIR})
-
-#INSTALL(
-#  FILES ${config_file_output}
-#  DESTINATION ${IFCPP_CONFIG_DIR})
-
+target_link_libraries(${TARGET_NAME} PRIVATE 
+    IfcPlusPlus
+    #c3dservice-api
+    #boost_system
+    )
