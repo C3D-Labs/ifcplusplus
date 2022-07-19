@@ -1,23 +1,8 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.7.2)
-
-# Set a default build type if none was specified https://blog.kitware.com/cmake-and-the-default-build-type/
-set(default_build_type "Release")
- 
-if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  message(STATUS "Setting build type to '${default_build_type}' as none was specified.")
-  set(CMAKE_BUILD_TYPE "${default_build_type}" CACHE
-      STRING "Choose the type of build." FORCE)
-  # Set the possible values of build type for cmake-gui
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
-    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
-endif()
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+CMAKE_MINIMUM_REQUIRED (VERSION 3.10)
 
 project(IFCPP)
 message(STATUS "------------------------------------------------------------------------")
 
-option(BUILD_CONSOLE_APPLICATION "Build an example CLI application" ON)
-option(BUILD_VIEWER_APPLICATION "Build the viewer example application" ON)
 option(USE_OSG_DEBUG "Use openscenegraph debug library" OFF)
 option(BUILD_STATIC_LIBRARY "Build static library" OFF)
 
@@ -31,33 +16,26 @@ IF(NOT WIN32)
     ENDIF()
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ELSE(NOT WIN32)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 ENDIF(NOT WIN32)
 
-set(CARVE_SOURCE_DIR ${IFCPP_SOURCE_DIR}/external/Carve)
-set(CARVE_BINARY_DIR ${IFCPP_BINARY_DIR})
-set(IFCPP_CONFIG_DIR "share/IFCPP/cmake")
-ADD_SUBDIRECTORY (external/Carve)
+#set(CARVE_SOURCE_DIR ${IFCPP_SOURCE_DIR}/external/Carve)
+#set(CARVE_BINARY_DIR ${IFCPP_BINARY_DIR})
+#set(IFCPP_CONFIG_DIR "share/IFCPP/cmake")
+#ADD_SUBDIRECTORY (external/Carve)
 ADD_SUBDIRECTORY (IfcPlusPlus)
 
 # Install configuration file
-INCLUDE(CMakePackageConfigHelpers)
-set(config_file_input  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/IFCPPConfig.cmake.in")
-set(config_file_output "${CMAKE_CURRENT_BINARY_DIR}/cmake/IFCPPConfig.cmake")
+#INCLUDE(CMakePackageConfigHelpers)
+#set(config_file_input  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/IFCPPConfig.cmake.in")
+#set(config_file_output "${CMAKE_CURRENT_BINARY_DIR}/cmake/IFCPPConfig.cmake")
 
-CONFIGURE_PACKAGE_CONFIG_FILE(
-  ${config_file_input}
-  ${config_file_output}
-  INSTALL_DESTINATION ${IFCPP_CONFIG_DIR})
+#CONFIGURE_PACKAGE_CONFIG_FILE(
+#  ${config_file_input}
+#  ${config_file_output}
+#  INSTALL_DESTINATION ${IFCPP_CONFIG_DIR})
 
-INSTALL(
-  FILES ${config_file_output}
-  DESTINATION ${IFCPP_CONFIG_DIR})
-  
-IF(BUILD_CONSOLE_APPLICATION)
-  ADD_SUBDIRECTORY (examples/CreateWallAndWriteFile)
-  ADD_SUBDIRECTORY (examples/LoadFileExampleConsole)
-ENDIF()
-IF(BUILD_VIEWER_APPLICATION)
-  ADD_SUBDIRECTORY (examples/SimpleViewerExampleQt)
-ENDIF()
+#INSTALL(
+#  FILES ${config_file_output}
+#  DESTINATION ${IFCPP_CONFIG_DIR})
+

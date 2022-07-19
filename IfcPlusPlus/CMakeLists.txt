@@ -67,7 +67,7 @@ link_directories( ${CMAKE_BINARY_DIR}/IfcPlusPlus/${CMAKE_BUILD_TYPE} )
 link_directories( ${CMAKE_BINARY_DIR}/external/Carve/${CMAKE_BUILD_TYPE} )
 target_link_libraries(IfcPlusPlus
   PUBLIC
-    carve
+    #carve
     ${VC_LIBS}
 )
 
@@ -103,8 +103,8 @@ export(
   FILE ${target_output}
   NAMESPACE IFCPP::)
 
-install(
-  EXPORT IfcPlusPlus
-  DESTINATION ${IFCPP_CONFIG_DIR}
-  FILE ${target_output_filename}
-  NAMESPACE IFCPP::)
+#install(
+#  EXPORT IfcPlusPlus
+#  DESTINATION ${IFCPP_CONFIG_DIR}
+#  FILE ${target_output_filename}
+#  NAMESPACE IFCPP::)
