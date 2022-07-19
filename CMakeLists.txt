@@ -10,12 +10,12 @@ ELSE(NOT WIN32)
 ENDIF(NOT WIN32)
 
 add_subdirectory (IfcPlusPlus)
-#add_subdirectory(cpp-api-client)
+add_subdirectory (api-client)
 
 add_executable(${TARGET_NAME} src/main.cpp)
 
 target_link_libraries(${TARGET_NAME} PRIVATE 
     IfcPlusPlus
-    #c3dservice-api
-    #boost_system
+    c3dservice-api
+    boost_system
     )

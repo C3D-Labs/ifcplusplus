@@ -10,6 +10,12 @@
 #include <ifcpp/model/BuildingModel.h>
 #include <ifcpp/reader/ReaderSTEP.h>
 
+#include <c3dservice-Api/ApiConfiguration.h>
+#include <c3dservice-Api/ApiClient.h>
+#include <c3dservice-Api/api/MonitorApi.h>
+
+using namespace org::openapitools::client;
+
 class MyIfcTreeItem
 {
 public:
@@ -105,6 +111,28 @@ shared_ptr<MyIfcTreeItem> resolveTreeItems(shared_ptr<BuildingObject> obj, std::
 
 int main()
 {
+    std::shared_ptr<api::ApiClient> apiClient(new api::ApiClient);
+    std::shared_ptr<api::ApiConfiguration> apiConfig(new api::ApiConfiguration);
+    apiConfig->setBaseUrl("http://127.0.0.1:12344/v1");
+    apiClient->setConfiguration(apiConfig);
+
+    // testing service
+    std::shared_ptr<api::MonitorApi>  monitor(new api::MonitorApi(apiClient));
+
+    try
+    {
+        auto task = monitor->getStatus()
+        .then([=](){
+            std::cout << "servce is active" << std::endl;
+        })
+        .wait();
+    }
+    catch(const std::exception& e)
+    {
+        std::cout << "servce is not active" << std::endl;
+        return 1;
+    }
+
     // 1: create an IFC model and a reader for IFC files in STEP format:
     shared_ptr<BuildingModel> ifc_model(new BuildingModel());
     shared_ptr<ReaderSTEP> step_reader(new ReaderSTEP());
