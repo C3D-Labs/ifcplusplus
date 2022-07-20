@@ -41,3 +41,5 @@ examples/LoadFileExampleNoGUI/LoadFileExampleNoGUI/x64/
 external/Carve/build/
 examples/CreateWallAndWriteFile/x64/
 examples/LoadFileWithGeometryExampleConsole/dump_mesh_debug.txt
+external/c3dkernel/include/
+external/c3dkernel/lib/
