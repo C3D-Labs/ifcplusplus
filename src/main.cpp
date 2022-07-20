@@ -13,10 +13,15 @@
 #include <ifcpp/model/BuildingModel.h>
 #include <ifcpp/reader/ReaderSTEP.h>
 
+#include <ifcpp/geometry/c3d/GeometryConverter.h>
+#include <ifcpp/geometry/c3d/PlacementConverter.h>
+
 #include <c3dservice-Api/ApiConfiguration.h>
 #include <c3dservice-Api/ApiClient.h>
 #include <c3dservice-Api/api/MonitorApi.h>
 #include <c3dservice-Api/api/CacheApi.h>
+
+
 
 using namespace org::openapitools::client;
 
@@ -109,8 +114,30 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
             }
         }
 
+        std::shared_ptr<IfcProduct> ifc_product = dynamic_pointer_cast<IfcProduct>(obj_def);
+        if(ifc_product)
+        {
+            if(ifc_product->m_Representation)
+            {
+                //std::wcout << ifc_product->m_ObjectPlacement->toString() << std::endl;
+                //item->setMatrix()
+
+                // convert matrix
+                //PlacementConverter placementConverter({});
+                //std::shared_ptr<TransformData> transformData;
+                //placementConverter.convertIfcObjectPlacement(ifc_product->m_ObjectPlacement, transformData);
+
+                shared_ptr<IfcLocalPlacement> local_placement = dynamic_pointer_cast<IfcLocalPlacement>( ifc_product->m_ObjectPlacement );
+                if(local_placement)
+                {
+                    std::wcout << local_placement->m_RelativePlacement->toString() << std::endl;
+                }
+            }
+        }
+
         item->setChildren(children);
         item->setAttrs(attrs);
+        
     }
 
     return item;
@@ -126,7 +153,7 @@ int main()
     // testing service
     std::shared_ptr<api::MonitorApi>  monitor(new api::MonitorApi(apiClient));
 
-    try
+    /*try
     {
         auto task = monitor->getStatus()
         .then([=](){
@@ -139,7 +166,7 @@ int main()
         std::cout << "servce is not active" << std::endl 
         << e.what() << std::endl;
         return 1;
-    }
+    }*/
 
     // 1: create an IFC model and a reader for IFC files in STEP format:
     shared_ptr<BuildingModel> ifc_model(new BuildingModel());
@@ -147,6 +174,9 @@ int main()
 
     // 2: load the model:
     step_reader->loadModelFromFile( L"example.ifc", ifc_model);
+
+    std::shared_ptr<GeometryConverter> geomConverter(new GeometryConverter(ifc_model));
+    geomConverter->convertGeometry();
 
     // 4: traverse tree structure of model, starting at root object (IfcProject)
     shared_ptr<IfcProject> ifc_project = ifc_model->getIfcProject();
@@ -159,7 +189,7 @@ int main()
     // init 
     std::shared_ptr<api::CacheApi> cache(new api::CacheApi(apiClient));
 
-    try
+    /*try
     {
         auto task = cache->cacheComposeModel(root_item)
         .then([=](pplx::task<std::string> uuid){
@@ -172,7 +202,7 @@ int main()
     {
         std::cout << e.what() << std::endl;
         return 1;
-    }
+    }*/
 
     return 0;
 }
