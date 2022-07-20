@@ -407,6 +407,8 @@ paths:
       operationId: "cacheComposeModel"
       consumes:
         - "application/json"
+      produces:
+        - text/plain
       parameters:
       - in: body
         name: data
@@ -669,6 +671,7 @@ definitions:
         readOnly: true
       children:
         type: array
+        default: []
         description: "Дочерние узлы"
         items: 
           $ref: '#/definitions/ComposeModelNode'

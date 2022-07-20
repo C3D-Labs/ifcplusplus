@@ -55,7 +55,7 @@ pplx::task<utility::string_t> CacheApi::cacheComposeModel(std::shared_ptr<Compos
     std::map<utility::string_t, std::shared_ptr<HttpContent>> localVarFileParams;
 
     std::unordered_set<utility::string_t> localVarResponseHttpContentTypes;
-    localVarResponseHttpContentTypes.insert( utility::conversions::to_string_t("*/*") );
+    localVarResponseHttpContentTypes.insert( utility::conversions::to_string_t("text/plain") );
 
     utility::string_t localVarResponseHttpContentType;
 

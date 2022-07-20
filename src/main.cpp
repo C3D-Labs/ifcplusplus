@@ -20,16 +20,6 @@
 
 using namespace org::openapitools::client;
 
-class MyIfcTreeItem
-{
-public:
-    MyIfcTreeItem() {}
-    std::wstring m_name;
-    std::wstring m_description;
-    std::wstring m_entity_guid;
-    std::string m_ifc_class_name;
-    std::vector<shared_ptr<MyIfcTreeItem> > m_children;
-};
 
 std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set<int>& set_visited)
 {
@@ -39,6 +29,9 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
     shared_ptr<IfcObjectDefinition> obj_def = dynamic_pointer_cast<IfcObjectDefinition>(obj);
     if (obj_def)
     {
+        std::map<utility::string_t, utility::string_t> attrs;
+        std::vector<std::shared_ptr<model::ComposeModelNode>> children;
+
         if (set_visited.find(obj_def->m_entity_id) != set_visited.end())
         {
             return nullptr;
@@ -61,7 +54,7 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
         if (obj_def->m_Name)
         {
             std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-            item->getAttrs()[attr_name] = convert.to_bytes(obj_def->m_Name->m_value);
+            attrs[attr_name] = convert.to_bytes(obj_def->m_Name->m_value);
         }
 
         if (obj_def->m_Description)
@@ -86,8 +79,7 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
                     auto child_tree_item = resolveTreeItems(child_obj_def, set_visited);
                     if (child_tree_item)
                     {
-                        //item->m_children.push_back(child_tree_item);
-                        item->getChildren().push_back(child_tree_item);
+                        children.push_back(child_tree_item);
                     }
                 }
             }
@@ -110,12 +102,15 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
                         auto child_tree_item = resolveTreeItems(related_product, set_visited);
                         if (child_tree_item)
                         {
-                            item->getChildren().push_back(child_tree_item);
+                            children.push_back(child_tree_item);
                         }
                     }
                 }
             }
         }
+
+        item->setChildren(children);
+        item->setAttrs(attrs);
     }
 
     return item;
@@ -146,9 +141,6 @@ int main()
         return 1;
     }
 
-    // init 
-    std::shared_ptr<api::CacheApi> cache(new api::CacheApi(apiClient));
-
     // 1: create an IFC model and a reader for IFC files in STEP format:
     shared_ptr<BuildingModel> ifc_model(new BuildingModel());
     shared_ptr<ReaderSTEP> step_reader(new ReaderSTEP());
@@ -161,12 +153,19 @@ int main()
     std::unordered_set<int> set_visited;
     auto root_item = resolveTreeItems(ifc_project, set_visited);
 
+    if(!root_item)
+        return 1;
+
+    // init 
+    std::shared_ptr<api::CacheApi> cache(new api::CacheApi(apiClient));
+
     try
     {
         auto task = cache->cacheComposeModel(root_item)
-        //.then([=](pplx::task<std::string> uuid){
-        //    std::cout << "Model is chached in service."<< uuid.get() << std::endl;
-        //})
+        .then([=](pplx::task<std::string> uuid){
+            std::cout << "Model is chached on service"<< std::endl 
+            << "UUID: " << uuid.get() << std::endl;
+        })
         .wait();
     }
     catch(const std::exception& e)
@@ -174,4 +173,6 @@ int main()
         std::cout << e.what() << std::endl;
         return 1;
     }
+
+    return 0;
 }
