@@ -7,10 +7,12 @@
 #include <ifcpp/IFC4/include/IfcLabel.h>
 #include <ifcpp/IFC4/include/IfcObjectDefinition.h>
 #include <ifcpp/IFC4/include/IfcProject.h>
+#include <ifcpp/IFC4/include/IfcRepresentation.h>
 #include <ifcpp/IFC4/include/IfcRelAggregates.h>
 #include <ifcpp/IFC4/include/IfcRelContainedInSpatialStructure.h>
 #include <ifcpp/IFC4/include/IfcText.h>
 #include <ifcpp/model/BuildingModel.h>
+#include <ifcpp/model/BuildingGuid.h>
 #include <ifcpp/reader/ReaderSTEP.h>
 
 #include <ifcpp/geometry/c3d/GeometryConverter.h>
@@ -28,8 +30,9 @@ using namespace org::openapitools::client;
 
 std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set<int>& set_visited)
 {
-    //shared_ptr<MyIfcTreeItem> item;
-    std::shared_ptr<api::ComposeModelNode> item(new api::ComposeModelNode);
+    std::shared_ptr<api::ComposeModelNode> item;
+    std::string item_uuid;
+    std::string rep_uuid;
     
     shared_ptr<IfcObjectDefinition> obj_def = dynamic_pointer_cast<IfcObjectDefinition>(obj);
     if (obj_def)
@@ -43,8 +46,8 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
         }
         set_visited.insert(obj_def->m_entity_id);
 
-        //item = std::shared_ptr<MyIfcTreeItem>(new MyIfcTreeItem());
         item = std::shared_ptr<api::ComposeModelNode>(new api::ComposeModelNode);
+        
         //item->m_ifc_class_name = obj_def->className();
 
         // access some attributes of IfcObjectDefinition
@@ -114,30 +117,40 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
             }
         }
 
+        static std::set<std::wstring> products;
+        static std::set<std::wstring> reps;
+
         std::shared_ptr<IfcProduct> ifc_product = dynamic_pointer_cast<IfcProduct>(obj_def);
         if(ifc_product)
         {
+            {
+                auto res = products.insert(ifc_product->m_GlobalId->toString());
+                if(!res.second){
+
+                }
+            }
+
             if(ifc_product->m_Representation)
             {
-                //std::wcout << ifc_product->m_ObjectPlacement->toString() << std::endl;
-                //item->setMatrix()
+                // generate own UUID
+                //item_uuid = createGUID32();
+                //{
+                //}
+            }
 
-                // convert matrix
-                //PlacementConverter placementConverter({});
-                //std::shared_ptr<TransformData> transformData;
-                //placementConverter.convertIfcObjectPlacement(ifc_product->m_ObjectPlacement, transformData);
-
-                shared_ptr<IfcLocalPlacement> local_placement = dynamic_pointer_cast<IfcLocalPlacement>( ifc_product->m_ObjectPlacement );
-                if(local_placement)
-                {
-                    std::wcout << local_placement->m_RelativePlacement->toString() << std::endl;
-                }
+            MbPlacement3D placement;
+            if(GeomUtils::GetC3dPlacement3D(dynamic_pointer_cast<IfcLocalPlacement>( ifc_product->m_ObjectPlacement), placement) 
+                && (placement.IsTranslation()||placement.IsRotation()))
+            {
+                //std::wcout << local_placement->m_RelativePlacement->toString() << std::endl;
+                std::wcout << placement.GetAxisX().x << placement.GetAxisX().y << placement.GetAxisX().z << std::endl;
             }
         }
 
         item->setChildren(children);
         item->setAttrs(attrs);
-        
+        item->setUuid(item_uuid);
+        item->setRepresentation(rep_uuid);
     }
 
     return item;

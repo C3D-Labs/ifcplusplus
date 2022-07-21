@@ -20,4 +20,5 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     c3dservice-api
     boost_system
     c3d
+    pthread
     )
