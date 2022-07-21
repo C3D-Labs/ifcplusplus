@@ -729,7 +729,7 @@ public:
         shared_ptr<IfcTessellatedItem> ifc_tessel_item = dynamic_pointer_cast<IfcTessellatedItem>( geom_item );
         if(ifc_tessel_item)
         {
-            std::cout << "IfcTessellatedItem" << std::endl;
+            //std::cout << "IfcTessellatedItem" << std::endl;
             m_tessel_converter->convertTessellatedItem(ifc_tessel_item, item_data);
             return;
         }

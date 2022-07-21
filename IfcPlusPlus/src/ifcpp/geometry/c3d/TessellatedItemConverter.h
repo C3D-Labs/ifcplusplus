@@ -22,8 +22,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include <ifcpp/IFC4/include/IfcBoolean.h>
 #include <ifcpp/IFC4/include/IfcCartesianPointList3D.h>
-#include <ifcpp/model/UnitConverter.h>
 #include <ifcpp/IFC4/include/IfcIndexedPolygonalFace.h>
 #include <ifcpp/IFC4/include/IfcIndexedPolygonalFaceWithVoids.h>
 #include <ifcpp/IFC4/include/IfcLengthMeasure.h>
@@ -31,10 +31,13 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <ifcpp/IFC4/include/IfcPositiveInteger.h>
 #include <ifcpp/IFC4/include/IfcTessellatedFaceSet.h>
 #include <ifcpp/IFC4/include/IfcTriangulatedFaceSet.h>
+#include <ifcpp/model/UnitConverter.h>
 
 #include "GeometryInputData.h"
 #include <mesh.h>
 #include <mesh_grid.h>
+
+#include <iostream>
 
 ///@brief imports tessellated meshes as carve meshes
 //Open tasks & TODOS:
@@ -270,8 +273,13 @@ protected:
         if(!tri_face_set->m_Coordinates)
             return;    
 
+        if(tri_face_set->m_Closed)
+            pMesh->SetClosed(tri_face_set->m_Closed->m_value);
+
         SPtr<MbGrid> pGrid = SPtr<MbGrid>(pMesh->AddGrid());
         copyVertices(tri_face_set->m_Coordinates, pGrid);
+
+        size_t const pn_index_count = tri_face_set->m_PnIndex.size();
 
         for(auto&& tri_index : tri_face_set->m_CoordIndex)
         {
@@ -280,10 +288,20 @@ protected:
 
             if(tri_index.size() == 3)
             {
-                const uint index_1 = tri_index[0]->m_value;
-                const uint index_2 = tri_index[1]->m_value;
-                const uint index_3 = tri_index[2]->m_value;
-                pGrid->AddTriangle(index_1, index_2, index_3, true);
+                if( pn_index_count > 0 )
+                {
+                    const uint index_1 = tri_index[tri_face_set->m_PnIndex[0]->m_value - 1]->m_value - 1;
+                    const uint index_2 = tri_index[tri_face_set->m_PnIndex[1]->m_value - 1]->m_value - 1;
+                    const uint index_3 = tri_index[tri_face_set->m_PnIndex[2]->m_value - 1]->m_value - 1;
+                    pGrid->AddTriangle(index_1, index_2, index_3, true);
+                } else 
+                {
+                    const uint index_1 = tri_index[0]->m_value - 1;
+                    const uint index_2 = tri_index[1]->m_value - 1;
+                    const uint index_3 = tri_index[2]->m_value - 1;
+                    pGrid->AddTriangle(index_1, index_2, index_3, true);
+                }
+
             }
         };      
         /*
