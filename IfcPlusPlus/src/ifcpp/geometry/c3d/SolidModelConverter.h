@@ -245,7 +245,7 @@ public:
             if( faceted_brep )
             {
                 std::cout << "IfcFacetedBrep" << std::endl;
-                // no additional attributes
+                //convertIfcFacetedBrep(faceted_brep)
                 return;
             }
 
