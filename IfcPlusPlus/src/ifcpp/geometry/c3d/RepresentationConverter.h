@@ -18,7 +18,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #pragma once
 
 #include <unordered_set>
-//#include <ifcpp/geometry/StylesConverter.h>
+#include <ifcpp/geometry/StylesConverter.h>
 //#include <ifcpp/geometry/GeometrySettings.h>
 #include <ifcpp/model/BasicTypes.h>
 #include <ifcpp/model/StatusCallback.h>
@@ -73,7 +73,7 @@ class RepresentationConverter : public StatusCallback
 protected:
     //shared_ptr<GeometrySettings>        m_geom_settings;
     //shared_ptr<UnitConverter>           m_unit_converter;
-    //shared_ptr<StylesConverter>         m_styles_converter;
+    shared_ptr<StylesConverter>         m_styles_converter;
     //shared_ptr<PointConverter>          m_point_converter;
     //shared_ptr<SplineConverter>         m_spline_converter;
     //shared_ptr<Sweeper>                 m_sweeper;
@@ -88,7 +88,7 @@ public:
     RepresentationConverter( /*shared_ptr<GeometrySettings> geom_settings, shared_ptr<UnitConverter> unit_converter*/ )
         //: m_geom_settings( geom_settings ), m_unit_converter( unit_converter )
     {
-        //m_styles_converter = shared_ptr<StylesConverter>( new StylesConverter() );
+        m_styles_converter = shared_ptr<StylesConverter>( new StylesConverter() );
         //m_point_converter = shared_ptr<PointConverter>( new PointConverter( m_unit_converter ) );
         //m_spline_converter = shared_ptr<SplineConverter>( new SplineConverter( m_geom_settings, m_point_converter ) );
         //m_sweeper = shared_ptr<Sweeper>( new Sweeper( m_geom_settings, m_unit_converter ) );
@@ -126,7 +126,6 @@ public:
     /*
     shared_ptr<GeometrySettings>&       getGeomSettings()   { return m_geom_settings; }
     shared_ptr<UnitConverter>&          getUnitConverter() { return m_unit_converter; }
-    shared_ptr<StylesConverter>&        getStylesConverter() { return m_styles_converter; }
     shared_ptr<PointConverter>&         getPointConverter() { return m_point_converter; }
     shared_ptr<SplineConverter>&        getSplineConverter() { return m_spline_converter; }
     shared_ptr<Sweeper>&                getSweeper() { return m_sweeper; }
@@ -136,6 +135,7 @@ public:
     shared_ptr<FaceConverter>&          getFaceConverter() { return m_face_converter; }
     shared_ptr<SolidModelConverter>&    getSolidConverter() { return m_solid_converter; }
     */
+    shared_ptr<StylesConverter>&        getStylesConverter() { return m_styles_converter; }
     
     void setUnitConverter( shared_ptr<UnitConverter>& unit_converter )
     {/*
@@ -145,7 +145,7 @@ public:
         m_placement_converter->m_unit_converter = unit_converter;
         m_face_converter->m_unit_converter = unit_converter;*/
     }
-    /*
+    
     void convertRepresentationStyle( const shared_ptr<IfcRepresentationItem>& representation_item, std::vector<shared_ptr<AppearanceData> >& vec_appearance_data )
     {
         std::vector<weak_ptr<IfcStyledItem> >&  vec_StyledByItem_inverse = representation_item->m_StyledByItem_inverse;
@@ -155,7 +155,7 @@ public:
             shared_ptr<IfcStyledItem> styled_item = shared_ptr<IfcStyledItem>( styled_item_weak );
             m_styles_converter->convertIfcStyledItem( styled_item, vec_appearance_data );
         }
-    }*/
+    }
 
     void convertIfcRepresentation( const shared_ptr<IfcRepresentation>& ifc_representation, shared_ptr<RepresentationData>& representation_data )
     {
@@ -380,7 +380,7 @@ public:
             messageCallback( "unhandled representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, representation_item.get() );
         }
 
-        /*if( m_geom_settings->handleLayerAssignments() )
+        //if( m_geom_settings->handleLayerAssignments() )
         {
             std::vector<weak_ptr<IfcPresentationLayerAssignment> >& vec_layer_assignments_inverse = ifc_representation->m_LayerAssignments_inverse;
             for( size_t ii = 0; ii < vec_layer_assignments_inverse.size(); ++ii )
@@ -408,7 +408,7 @@ public:
                     }
                 }
             }
-        }*/
+        }
     }
     
     void convertIfcGeometricRepresentationItem( const shared_ptr<IfcGeometricRepresentationItem>& geom_item, shared_ptr<ItemShapeData> item_data )
@@ -418,14 +418,13 @@ public:
         //IfcCompositeCurveSegment, IfcCsgPrimitive3D, IfcCurve, IfcDirection, IfcFaceBasedSurfaceModel, IfcFillAreaStyleHatching, IfcFillAreaStyleTiles, 
         //IfcGeometricSet, IfcHalfSpaceSolid, IfcLightSource, IfcPlacement, IfcPlanarExtent, IfcPoint, IfcSectionedSpine, IfcShellBasedSurfaceModel, 
         //IfcSolidModel, IfcSurface, IfcTessellatedItem, IfcTextLiteral, IfcVector))
-        /*
-        if( m_geom_settings->handleStyledItems() )
+        
+        //if( m_geom_settings->handleStyledItems() )
         {
             std::vector<shared_ptr<AppearanceData> > vec_appearance_data;
             convertRepresentationStyle( geom_item, vec_appearance_data );
             std::copy( vec_appearance_data.begin(), vec_appearance_data.end(), std::back_inserter( item_data->m_vec_item_appearances ) );
         }
-        */
         
         shared_ptr<IfcBoundingBox> bbox = dynamic_pointer_cast<IfcBoundingBox>( geom_item );
         if( bbox )
@@ -936,8 +935,9 @@ public:
         messageCallback( "Unhandled IFC Representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, topological_item.get() );
     }*/
 
-    /*void subtractOpenings( const shared_ptr<IfcElement>& ifc_element, shared_ptr<ProductShapeData>& product_shape )
+    void subtractOpenings( const shared_ptr<IfcElement>& ifc_element, shared_ptr<ProductShapeData>& product_shape )
     {
+        /*
         std::vector<shared_ptr<ProductShapeData> > vec_opening_data;
         std::vector<weak_ptr<IfcRelVoidsElement> > vec_rel_voids( ifc_element->m_HasOpenings_inverse );
         if( vec_rel_voids.size() == 0 )
@@ -1122,6 +1122,6 @@ public:
                     }
                 }
             }
-        }
-    }*/
+        }*/
+    }
 };
