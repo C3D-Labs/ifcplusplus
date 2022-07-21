@@ -235,7 +235,7 @@ public:
         // TODO: handle IfcRelAssignsToProduct
     }*/
 
-    /*
+    
     void readAppearanceFromPropertySet( const shared_ptr<IfcPropertySet>& prop_set, shared_ptr<ProductShapeData>& product_shape )
     {
         if( !prop_set )
@@ -269,7 +269,6 @@ public:
                 {
                     //shared_ptr<IfcValue>& nominal_value = property_single_value->m_NominalValue;              //optional
                     //shared_ptr<IfcUnit>& unit = property_single_value->m_Unit;                        //optional
-
                 }
 
                 continue;
@@ -297,7 +296,7 @@ public:
                 }
             }
         }
-    }*/
+    }
     
     void resetIfcSiteLargeCoords(shared_ptr<IfcSite>& ifc_site)
     {
@@ -656,7 +655,6 @@ public:
             //todo m_representation_converter->getPlacementConverter()->convertIfcObjectPlacement( ifc_product->m_ObjectPlacement, product_shape, placement_already_applied, false );
         }
 
-        /* todo
         std::vector<shared_ptr<ProductShapeData> > vec_opening_data;
         const shared_ptr<IfcElement> ifc_element = dynamic_pointer_cast<IfcElement>(ifc_product);
         if( ifc_element )
@@ -671,7 +669,7 @@ public:
             {
                 product_shape->addAppearance(appearance_data);
             }
-        }*/
+        }
 
         /*todo
         // Fetch the IFCProduct relationships

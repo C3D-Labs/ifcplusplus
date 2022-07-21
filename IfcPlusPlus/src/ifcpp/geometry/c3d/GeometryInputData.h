@@ -18,7 +18,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #pragma once
 
 #include <vector>
-//#include <ifcpp/geometry/AppearanceData.h>
+#include <ifcpp/geometry/AppearanceData.h>
 #include <ifcpp/model/BasicTypes.h>
 #include <ifcpp/model/BuildingException.h>
 #include <ifcpp/IFC4/include/IfcObjectPlacement.h>
@@ -30,6 +30,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 
 #include <mb_matrix3d.h>
 #include <model_item.h>
+#include <attr_color.h>
 
 #include <assembly.h>
 
@@ -107,7 +108,7 @@ public:
     //std::vector<shared_ptr<carve::input::PolylineSetData> > m_polylines;
     //std::vector<shared_ptr<carve::mesh::MeshSet<3> > >      m_meshsets;
     //std::vector<shared_ptr<carve::mesh::MeshSet<3> > >      m_meshsets_open;
-    //std::vector<shared_ptr<AppearanceData> >                m_vec_item_appearances;
+    std::vector<shared_ptr<AppearanceData> >                m_vec_item_appearances;
     //std::vector<shared_ptr<TextItemData> >                  m_vec_text_literals;
     weak_ptr<RepresentationData>                            m_parent_representation;  // Pointer to representation object that this item belongs to
     shared_ptr<IfcRepresentationItem>                       m_ifc_item;
@@ -123,7 +124,7 @@ public:
         //if( m_polylines.size() > 0 )                { return false; }
         //if( m_meshsets.size() > 0 )                 { return false; }
         //if( m_meshsets_open.size() > 0 )            { return false; }
-        //if( m_vec_item_appearances.size() > 0 )     { return false; }
+        if( m_vec_item_appearances.size() > 0 )     { return false; }
         //if( m_vec_text_literals.size() > 0 )        { return false; }
 
         return true;
@@ -438,7 +439,7 @@ public:
     weak_ptr<IfcRepresentation>                     m_ifc_representation;
     weak_ptr<IfcRepresentationContext>              m_ifc_representation_context;
     std::vector<shared_ptr<ItemShapeData> >         m_vec_item_data;
-    //std::vector<shared_ptr<AppearanceData> >        m_vec_representation_appearances;
+    std::vector<shared_ptr<AppearanceData> >        m_vec_representation_appearances;
     std::wstring                                    m_representation_identifier;
     std::wstring                                    m_representation_type;
     weak_ptr<ProductShapeData>                      m_parent_product;  // Pointer to product object that this representation belongs to
@@ -479,10 +480,10 @@ public:
             m_vec_item_data.push_back( item_data );
         }
         // TODO: Check if placement is same
-        //std::copy( other->m_vec_representation_appearances.begin(), other->m_vec_representation_appearances.end(), std::back_inserter( m_vec_representation_appearances ) );
+        std::copy( other->m_vec_representation_appearances.begin(), other->m_vec_representation_appearances.end(), std::back_inserter( m_vec_representation_appearances ) );
     }
 
-    /*void addAppearance( shared_ptr<AppearanceData>& appearance )
+    void addAppearance( shared_ptr<AppearanceData>& appearance )
     {
         if( !appearance )
         {
@@ -498,14 +499,14 @@ public:
             }
         }
         m_vec_representation_appearances.push_back( appearance );
-    }*/
+    }
 
-    /*void clearAppearanceData()
+    void clearAppearanceData()
     {
         m_vec_representation_appearances.clear();
-    }*/
+    }
 
-    /*void clearAll()
+    void clearAll()
     {
         m_vec_representation_appearances.clear();
         m_ifc_representation.reset();
@@ -513,7 +514,7 @@ public:
         m_vec_item_data.clear();
         m_representation_identifier = L"";
         m_representation_type = L"";
-    }*/
+    }
     
     /*void applyTransformToRepresentation( const MbMatrix3D& matrix, bool matrix_identity_checked = false )
     {
@@ -538,23 +539,6 @@ public:
             item_data->computeBoundingBox( bbox );
         }
     }*/
-
-    SPtr<MbItem> BuildMathItem() const
-    {
-        SPtr<MbItem> pMath;
-
-        if(!m_vec_item_data.empty())
-        {
-            if(m_vec_item_data.size() > 1)
-            {
-                SPtr<MbAssembly> pAssm;
-
-            }else 
-                pMath = m_vec_item_data[0]->m_pMathItem;
-        }
-
-        return pMath;
-    }
 };
 
 class ProductShapeData 
@@ -568,7 +552,7 @@ public:
     weak_ptr<ProductShapeData>                          m_parent;
     std::vector<shared_ptr<TransformData> >             m_vec_transforms;
     std::vector<shared_ptr<ProductShapeData> >          m_vec_children;
-    //std::vector<shared_ptr<AppearanceData> >            m_vec_product_appearances;
+    std::vector<shared_ptr<AppearanceData>>            m_vec_product_appearances;
 
     ProductShapeData() {}
     ProductShapeData( std::wstring entity_guid ) : m_entity_guid(entity_guid) { }
@@ -604,7 +588,7 @@ public:
         return copy_data;
     }*/
 
-    /*void addAppearance( shared_ptr<AppearanceData>& appearance )
+    void addAppearance( shared_ptr<AppearanceData>& appearance )
     {
         if( !appearance )
         {
@@ -620,16 +604,16 @@ public:
             }
         }
         m_vec_product_appearances.push_back( appearance );
-    }*/
+    }
 
-    /*void clearAppearanceData()
+    void clearAppearanceData()
     {
         m_vec_product_appearances.clear();
-    }*/
+    }
 
     void clearAll()
     {
-        //m_vec_product_appearances.clear();
+        m_vec_product_appearances.clear();
 
         m_ifc_object_definition.reset();
         m_object_placement.reset();
@@ -835,7 +819,7 @@ public:
         }
     }*/
 
-    inline SPtr<MbItem> BuildMathItem() const
+    inline SPtr<MbItem> toMathItem() const
     {
         SPtr<MbItem> pMath;
 
@@ -844,7 +828,25 @@ public:
         {
             for( auto&& pItem :pData->m_vec_item_data)
             {
-                pItems.push_back(pItem->m_pMathItem);
+                if(pItem->m_pMathItem)
+                {
+                    // assign material
+                    if( !pItem->m_vec_item_appearances.empty() )
+                    {
+                        auto&& item_appearance = pItem->m_vec_item_appearances[0];
+
+                        auto vec4_diffuse = item_appearance->m_color_diffuse;
+
+                        const uint32_t hexRed = static_cast<uint32_t>(vec4_diffuse.m_r * 255);
+                        const uint32_t hexGreen = static_cast<uint32_t>(vec4_diffuse.m_g * 255) << 8;
+                        const uint32_t hexBlue = static_cast<uint32_t>(vec4_diffuse.m_b * 255) << 16;
+                        const uint32_t c = 0xff000000|hexRed|hexGreen|hexBlue;
+
+                        pItem->m_pMathItem->SetSimpleAttribute(MbColor(c));
+                    }
+
+                    pItems.push_back(pItem->m_pMathItem);
+                }
             }
         }
 
