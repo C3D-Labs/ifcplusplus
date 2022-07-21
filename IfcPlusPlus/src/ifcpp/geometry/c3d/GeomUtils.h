@@ -22,10 +22,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <ifcpp/model/BasicTypes.h>
 #include <ifcpp/model/BuildingException.h>
 
+#include "ifcpp/IFC4/include/IfcCartesianPoint.h"
+#include "ifcpp/IFC4/include/IfcDirection.h"
+#include "ifcpp/IFC4/include/IfcReal.h"
+#include <ifcpp/IFC4/include/IfcAxis2Placement3D.h>
+#include <ifcpp/IFC4/include/IfcDirection.h>
+#include <ifcpp/IFC4/include/IfcLengthMeasure.h>
+#include <ifcpp/IFC4/include/IfcLocalPlacement.h>
+
 //#include "IncludeCarveHeaders.h"
 
 #include <mb_cart_point.h>
 #include <mb_cart_point3d.h>
+#include <mb_matrix.h>
+#include <mb_matrix3d.h>
+#include <mb_matrixnn.h>
+#include <mb_placement.h>
+#include <mb_placement3d.h>
+
 
 using vec2 = MbCartPoint;
 using vec3 = MbVector3D;
@@ -1000,4 +1014,40 @@ namespace GeomUtils
         }
         
     }*/
+
+    static inline  MbCartPoint3D GetC3dPoint ( const IfcCartesianPoint& ifcCartPoint ) {
+        return MbCartPoint3D( ifcCartPoint.m_Coordinates[0]->m_value, ifcCartPoint.m_Coordinates[1]->m_value, ifcCartPoint.m_Coordinates[2]->m_value );
+    }
+
+
+    static inline MbVector3D GetC3dVector ( const IfcDirection& ifcCartPoint ) {
+        return MbCartPoint3D( ifcCartPoint.m_DirectionRatios[0]->m_value, ifcCartPoint.m_DirectionRatios[1]->m_value, ifcCartPoint.m_DirectionRatios[2]->m_value );
+    }
+
+    static inline void GetC3dPoints ( const std::vector<shared_ptr<IfcCartesianPoint> >& polygon, std::vector<MbCartPoint3D>& spatialPoints )
+    {
+        spatialPoints.reserve( polygon.size() );
+        for( auto ifcCartPoint : polygon ) {
+            if ( ifcCartPoint )
+            spatialPoints.push_back( GetC3dPoint(*ifcCartPoint) );
+        }
+    }
+
+    static inline bool GetC3dPlacement3D ( shared_ptr<IfcLocalPlacement> ifcPartLocalPlace, MbPlacement3D& out ) {
+        if ( ifcPartLocalPlace && ifcPartLocalPlace->m_RelativePlacement )
+        {
+            shared_ptr<IfcAxis2Placement3D> ifcPartPlace = dynamic_pointer_cast<IfcAxis2Placement3D>(ifcPartLocalPlace->m_RelativePlacement );
+            if ( ifcPartPlace ) {
+                shared_ptr<IfcCartesianPoint> placeOrigin = ifcPartPlace->m_Location;
+                shared_ptr<IfcDirection> placeZDir = ifcPartPlace->m_Axis;
+                shared_ptr<IfcDirection> placeXDir = ifcPartPlace->m_RefDirection;
+                if ( placeOrigin && placeZDir && placeXDir )
+                {
+                    out.Init(GetC3dPoint(*placeOrigin), GetC3dVector(*placeZDir), GetC3dVector(*placeXDir));
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

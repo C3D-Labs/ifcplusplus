@@ -34,6 +34,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "GeometryInputData.h"
 #include <mesh.h>
+#include <mesh_grid.h>
 
 ///@brief imports tessellated meshes as carve meshes
 //Open tasks & TODOS:
@@ -65,7 +66,7 @@ public:
                     StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, tessellated_item.get());
             return;
         }
-        auto const& vertices = face_set->m_Coordinates;
+        auto vertices = face_set->m_Coordinates;
         if(!vertices)
         {
             messageCallback( "Tessellated item does not contain any vertices!",
@@ -73,6 +74,21 @@ public:
             return;
         }
 
+        auto const coordinate_count = face_set->m_Coordinates->m_CoordList.size();
+        SPtr<MbMesh> pMesh(new MbMesh);
+
+        if(auto const poly_face_set = dynamic_pointer_cast<IfcPolygonalFaceSet>(tessellated_item))
+        {
+            convertPolygonalFaceSet( poly_face_set, coordinate_count, pMesh);
+        }
+        
+        if(auto const tri_face_set = dynamic_pointer_cast<IfcTriangulatedFaceSet>(tessellated_item))
+        {
+            convertTriangulatedFaceSet( tri_face_set, coordinate_count, pMesh );
+        }
+
+        item_data->m_pMathItem = pMesh;
+            
         //face_set->m_Coordinates->m_CoordList
         
         /*
@@ -91,11 +107,11 @@ public:
     }
 
 protected:
-    /*
+    
     bool copyVertices(shared_ptr<IfcCartesianPointList3D> const point_list,
-            shared_ptr<carve::input::PolyhedronData> carve_mesh_builder)
+            SPtr<MbGrid> pMesh)
     {
-        double length_factor = m_unit_converter->getLengthInMeterFactor();
+        double length_factor = 1.0f; //todo m_unit_converter->getLengthInMeterFactor();
         for(auto const& coord : point_list->m_CoordList)
         {
             if(coord.size() != 3)
@@ -104,19 +120,20 @@ protected:
                         StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, point_list.get());
                 return false;
             }
-            carve::geom3d::Vector carve_point;
-            carve_point.x = coord[0]->m_value * length_factor;
-            carve_point.y = coord[1]->m_value * length_factor;
-            carve_point.z = coord[2]->m_value * length_factor;
-            carve_mesh_builder->addVertex(carve_point);
+            MbCartPoint3D point;
+            point.x = coord[0]->m_value * length_factor;
+            point.y = coord[1]->m_value * length_factor;
+            point.z = coord[2]->m_value * length_factor;
+            pMesh->AddPoint(point);
         }
         return true;
-    }*/
+    }
 
-    /*void convertPolygonalFaceSet(shared_ptr<IfcPolygonalFaceSet> const poly_face_set,
-            size_t const coordinate_count,
-            shared_ptr<carve::input::PolyhedronData> carve_mesh_builder)
+    void convertPolygonalFaceSet(shared_ptr<IfcPolygonalFaceSet> poly_face_set,
+            size_t coordinate_count,
+            SPtr<MbMesh> pMesh)
     {
+        /*
         //indexing changes if PnIndex is present:
         //no PnIndex -> CoordIndex of faces is 1-based index into Coordinates
         //PnIndex -> CoordIndex of faces is 1-based index into PnIndex.
@@ -154,16 +171,15 @@ protected:
                 ? std::any_of(coord_index.cbegin(), coord_index.cend(), check_and_add_indirect)
                 : std::any_of(coord_index.cbegin(), coord_index.cend(), check_and_add))
                 continue;
-            if(auto face_with_voids = dynamic_pointer_cast<IfcIndexedPolygonalFaceWithVoids>
-                    (indexed_face))
+            if(auto face_with_voids = dynamic_pointer_cast<IfcIndexedPolygonalFaceWithVoids>(indexed_face))
             {
                 copyHoleIndices(hole_vertex_indices, face_with_voids->m_InnerCoordIndices,
                         poly_face_set->m_PnIndex, coordinate_count);
                 mergeHolesIntoPoly(vertex_indices, hole_vertex_indices, carve_mesh_builder);
             }
             carve_mesh_builder->addFace(vertex_indices.cbegin(), vertex_indices.cend());
-        }
-    }*/
+        }*/
+    }
 
     //also resolves indirect access via pn, giving direct indices into coord list
     /*void copyHoleIndices(std::vector<std::vector<int>>& hole_indices,
@@ -247,10 +263,30 @@ protected:
         }
     }*/
 
-    /*void convertTriangulatedFaceSet(shared_ptr<IfcTriangulatedFaceSet> const tri_face_set,
-            size_t const coordinate_count,
-            shared_ptr<carve::input::PolyhedronData> carve_mesh_builder)
+    void convertTriangulatedFaceSet(shared_ptr<IfcTriangulatedFaceSet> tri_face_set,
+            size_t coordinate_count,
+            SPtr<MbMesh> pMesh)
     {
+        if(!tri_face_set->m_Coordinates)
+            return;    
+
+        SPtr<MbGrid> pGrid = SPtr<MbGrid>(pMesh->AddGrid());
+        copyVertices(tri_face_set->m_Coordinates, pGrid);
+
+        for(auto&& tri_index : tri_face_set->m_CoordIndex)
+        {
+            std::vector<MbCartPoint3D> points;
+            auto&& ifcPoints = tri_face_set->m_Coordinates->m_CoordList;
+
+            if(tri_index.size() == 3)
+            {
+                const uint index_1 = tri_index[0]->m_value;
+                const uint index_2 = tri_index[1]->m_value;
+                const uint index_3 = tri_index[2]->m_value;
+                pGrid->AddTriangle(index_1, index_2, index_3, true);
+            }
+        };      
+        /*
         //indexing changes if PnIndex is present:
         //no PnIndex -> CoordIndex is 1-based index into Coordinates
         //PnIndex -> CoordIndex is 1-based index into PnIndex.
@@ -287,7 +323,8 @@ protected:
                 continue;
             carve_mesh_builder->addFace(vertex_indices.cbegin(), vertex_indices.cend());
         }
-    }*/
+        */
+    }
 
 private:
     shared_ptr<UnitConverter> const m_unit_converter;
