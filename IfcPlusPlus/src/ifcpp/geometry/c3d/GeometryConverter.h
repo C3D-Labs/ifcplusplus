@@ -65,7 +65,7 @@ public:
     shared_ptr<BuildingModel>&                      getBuildingModel() { return m_ifc_model; }
     shared_ptr<RepresentationConverter>&            getRepresentationConverter() { return m_representation_converter; }
     //shared_ptr<GeometrySettings>&                   getGeomSettings() { return m_geom_settings; }
-    //std::map<std::string, shared_ptr<ProductShapeData> >&   getShapeInputData() { return m_product_shape_data; }
+    std::map<std::string, shared_ptr<ProductShapeData> >&   getShapeInputData() { return m_product_shape_data; }
     std::map<std::string, shared_ptr<BuildingObject> >&     getObjectsOutsideSpatialStructure() { return m_map_outside_spatial_structure; }
 
     GeometryConverter( shared_ptr<BuildingModel>& ifc_model )
@@ -462,10 +462,6 @@ public:
 
                 {
                     auto test = m_product_shape_data.insert( std::make_pair( guid, product_geom_input_data ) );
-                    if(test.second)
-                    {
-                        std::cout << "duplicate " << guid <<std::endl;
-                    }
 
                     if( thread_err.tellp() > 0 )
                     {

@@ -31,6 +31,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <mb_matrix3d.h>
 #include <model_item.h>
 
+#include <assembly.h>
+
 class TextItemData
 {
 public:
@@ -536,6 +538,23 @@ public:
             item_data->computeBoundingBox( bbox );
         }
     }*/
+
+    SPtr<MbItem> BuildMathItem() const
+    {
+        SPtr<MbItem> pMath;
+
+        if(!m_vec_item_data.empty())
+        {
+            if(m_vec_item_data.size() > 1)
+            {
+                SPtr<MbAssembly> pAssm;
+
+            }else 
+                pMath = m_vec_item_data[0]->m_pMathItem;
+        }
+
+        return pMath;
+    }
 };
 
 class ProductShapeData 
@@ -815,6 +834,36 @@ public:
             }
         }
     }*/
+
+    inline SPtr<MbItem> BuildMathItem() const
+    {
+        SPtr<MbItem> pMath;
+
+        std::vector<SPtr<MbItem>> pItems;
+        for( auto&& pData : m_vec_representations )
+        {
+            for( auto&& pItem :pData->m_vec_item_data)
+            {
+                pItems.push_back(pItem->m_pMathItem);
+            }
+        }
+
+        if(!pItems.empty())
+        {
+            if(pItems.size() > 1)
+            {
+                SPtr<MbAssembly> pAssm(new MbAssembly());
+                
+                for(auto&& pItem : pItems)
+                    pAssm->AddItem(*pItem);
+
+                pMath = pAssm;
+            } else 
+                pMath = pItems[0];
+        }
+
+        return pMath;
+    }
 };
 
 #define ROUND_POLY_COORDINATES_UP 1000000.0
