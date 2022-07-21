@@ -29,14 +29,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <ifcpp/IFC4/include/IfcBooleanOperator.h>
 #include <ifcpp/IFC4/include/IfcBooleanClippingResult.h>
 #include <ifcpp/IFC4/include/IfcBoxedHalfSpace.h>
+#include "ifcpp/IFC4/include/IfcCartesianPoint.h"
 #include <ifcpp/IFC4/include/IfcCsgPrimitive3D.h>
 #include <ifcpp/IFC4/include/IfcCsgSolid.h>
 #include <ifcpp/IFC4/include/IfcExtrudedAreaSolid.h>
+#include "ifcpp/IFC4/include/IfcFace.h"
+#include "ifcpp/IFC4/include/IfcFaceBound.h"
 #include <ifcpp/IFC4/include/IfcFacetedBrep.h>
 #include <ifcpp/IFC4/include/IfcFixedReferenceSweptAreaSolid.h>
 #include <ifcpp/IFC4/include/IfcHalfSpaceSolid.h>
 #include <ifcpp/IFC4/include/IfcManifoldSolidBrep.h>
 #include <ifcpp/IFC4/include/IfcPolygonalBoundedHalfSpace.h>
+#include <ifcpp/IFC4/include/IfcPolyLoop.h>
 #include <ifcpp/IFC4/include/IfcRectangularPyramid.h>
 #include <ifcpp/IFC4/include/IfcRevolvedAreaSolid.h>
 #include <ifcpp/IFC4/include/IfcRightCircularCone.h>
@@ -57,6 +61,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 //#include "Sweeper.h"
 //#include "CSG_Adapter.h"
 //#include "IncludeCarveHeaders.h"
+
+#include <mb_cart_point.h>
+#include <mb_cart_point3d.h>
+#include <mb_matrix.h>
+#include <mb_matrix3d.h>
+#include <mb_matrixnn.h>
+#include <mb_placement.h>
+#include <mb_placement3d.h>
+
+#include <mesh.h>
+#include <mesh_grid.h>
+#include <mesh_primitive.h>
+#include <mesh_polygon.h>
+
+
 
 class SolidModelConverter : public StatusCallback
 {
@@ -344,6 +363,49 @@ public:
 
         messageCallback( "Unhandled IFC Representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, solid_model.get() );
     }
+
+    void convertIfcFacetedBrep( const shared_ptr<IfcFacetedBrep>& asFacetedBrep, shared_ptr<ItemShapeData> item_data )
+    {
+        if ( asFacetedBrep && asFacetedBrep->m_Outer )
+        {
+            SPtr<MbMesh> pMesh;
+            for( auto curFace: asFacetedBrep->m_Outer->m_CfsFaces )
+            {
+                if ( !curFace )
+                    continue;
+
+                SPtr<MbGrid> c3dGrid;
+
+                std::vector<std::vector<MbCartPoint3D>> c3dGridSpatialPoints;
+                MbPlacement3D c3dGridPlacement;
+                bool placementDefined(true);
+                for( auto faceBound : curFace->m_Bounds )
+                {
+                    if ( !faceBound )
+                        continue;
+                    shared_ptr<IfcPolyLoop> asPolyLoop = dynamic_pointer_cast<IfcPolyLoop>(faceBound->m_Bound);
+                    if ( (!asPolyLoop) || asPolyLoop->m_Polygon.empty() )
+                        continue;
+                    std::vector<MbCartPoint3D> curC3dPolygon;
+                    GeomUtils::GetC3dPoints( asPolyLoop->m_Polygon, curC3dPolygon );
+                    if ( !curC3dPolygon.empty() )
+                        c3dGridSpatialPoints.push_back(curC3dPolygon);
+                
+                }
+                if ( !c3dGridSpatialPoints.empty() ) {
+                    //c3dGrid = SPtr<MbGrid>( CreateGridByPolyonPoints( c3dGridSpatialPoints ) );
+                    if ( pMesh.is_null() ) {
+                        pMesh.assign( new MbMesh() );
+                    }
+                    if ( c3dGrid )
+                        pMesh->AddGrid( *c3dGrid );
+                }
+            }
+            if(pMesh)
+                item_data->m_pMathItem = pMesh;
+        }
+    }
+
     /*
     void convertIfcExtrudedAreaSolid( const shared_ptr<IfcExtrudedAreaSolid>& extruded_area, shared_ptr<ItemShapeData> item_data )
     {
