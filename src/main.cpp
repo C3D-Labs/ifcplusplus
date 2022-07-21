@@ -23,6 +23,8 @@
 #include <c3dservice-Api/api/MonitorApi.h>
 #include <c3dservice-Api/api/CacheApi.h>
 
+#include "conv_exchange_settings.h"
+#include "conv_model_exchange.h"
 
 
 using namespace org::openapitools::client;
@@ -143,7 +145,7 @@ std::shared_ptr<api::ComposeModelNode> resolveTreeItems(shared_ptr<BuildingObjec
                 && (placement.IsTranslation()||placement.IsRotation()))
             {
                 //std::wcout << local_placement->m_RelativePlacement->toString() << std::endl;
-                std::wcout << placement.GetAxisX().x << placement.GetAxisX().y << placement.GetAxisX().z << std::endl;
+                //std::wcout << placement.GetAxisX().x << placement.GetAxisX().y << placement.GetAxisX().z << std::endl;
             }
         }
 
@@ -186,10 +188,22 @@ int main()
     shared_ptr<ReaderSTEP> step_reader(new ReaderSTEP());
 
     // 2: load the model:
-    step_reader->loadModelFromFile( L"example.ifc", ifc_model);
+    step_reader->loadModelFromFile( L"example_.ifc", ifc_model);
 
     std::shared_ptr<GeometryConverter> geomConverter(new GeometryConverter(ifc_model));
     geomConverter->convertGeometry();
+
+    // save to file
+    auto assm = new MbAssembly();
+    for(auto&& data : geomConverter->getShapeInputData())
+    {
+        if( auto ptr = data.second->toMathItem())
+            assm->AddItem(*ptr);
+    }
+    c3d::ExportIntoFile(*assm, "test.c3d");
+
+    //c3d::C3DExchangeBuffer buffer;
+    //MbeConvResType res = c3d::ExportIntoBuffer(*item, mxf_C3D, buffer);
 
     // 4: traverse tree structure of model, starting at root object (IfcProject)
     shared_ptr<IfcProject> ifc_project = ifc_model->getIfcProject();
