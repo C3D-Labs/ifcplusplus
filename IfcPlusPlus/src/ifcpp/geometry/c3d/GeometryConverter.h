@@ -461,7 +461,11 @@ public:
                 }
 
                 {
-                    m_product_shape_data.insert( std::make_pair( guid, product_geom_input_data ) );
+                    auto test = m_product_shape_data.insert( std::make_pair( guid, product_geom_input_data ) );
+                    if(test.second)
+                    {
+                        std::cout << "duplicate " << guid <<std::endl;
+                    }
 
                     if( thread_err.tellp() > 0 )
                     {
@@ -524,25 +528,25 @@ public:
                     continue;
                 }
 
-                //if( !product_shape->m_added_to_spatial_structure )
-                //{
-                //    if( !product_shape->m_ifc_object_definition.expired() )
-                //    {
-                //        shared_ptr<IfcObjectDefinition> ifc_object_def( product_shape->m_ifc_object_definition );
-                //        shared_ptr<IfcFeatureElementSubtraction> opening = dynamic_pointer_cast<IfcFeatureElementSubtraction>(ifc_object_def);
-                //        if( !m_geom_settings->getRenderObjectFilter()(ifc_object_def) )
-                //        {
-                //            continue;
-                //        }
-                //        std::string guid;
-                //        if (ifc_object_def->m_GlobalId)
-                //        {
-                //            std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converterX;
-                //            guid = converterX.to_bytes(ifc_object_def->m_GlobalId->m_value);
-                //        }
-                //        m_map_outside_spatial_structure[guid] = ifc_object_def;
-                //    }
-                //}
+                if( !product_shape->m_added_to_spatial_structure )
+                {
+                    if( !product_shape->m_ifc_object_definition.expired() )
+                    {
+                        shared_ptr<IfcObjectDefinition> ifc_object_def( product_shape->m_ifc_object_definition );
+                        shared_ptr<IfcFeatureElementSubtraction> opening = dynamic_pointer_cast<IfcFeatureElementSubtraction>(ifc_object_def);
+                        //if( !m_geom_settings->getRenderObjectFilter()(ifc_object_def) )
+                        //{
+                        //    continue;
+                        //}
+                        std::string guid;
+                        if (ifc_object_def->m_GlobalId)
+                        {
+                            std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converterX;
+                            guid = converterX.to_bytes(ifc_object_def->m_GlobalId->m_value);
+                        }
+                        m_map_outside_spatial_structure[guid] = ifc_object_def;
+                    }
+                }
             }
         }
         //catch( OutOfMemoryException& e )
