@@ -90,23 +90,8 @@ public:
             convertTriangulatedFaceSet( tri_face_set, coordinate_count, pMesh );
         }
 
-        item_data->m_pMathItem = pMesh;
-            
-        //face_set->m_Coordinates->m_CoordList
-        
-        /*
-        if(!copyVertices(vertices, carve_mesh_builder))
-            return;
-        auto const coordinate_count = face_set->m_Coordinates->m_CoordList.size();
-
-        if(auto const poly_face_set = dynamic_pointer_cast<IfcPolygonalFaceSet>(tessellated_item))
-            convertPolygonalFaceSet( poly_face_set, coordinate_count, carve_mesh_builder );
-
-        if(auto const tri_face_set = dynamic_pointer_cast<IfcTriangulatedFaceSet>(tessellated_item))
-            convertTriangulatedFaceSet( tri_face_set, coordinate_count, carve_mesh_builder );
-
-        item_data->addOpenOrClosedPolyhedron( carve_mesh_builder );
-        */
+        if(pMesh->AllPointsCount() > 0)
+            item_data->m_pMathItem = pMesh;
     }
 
 protected:
@@ -266,6 +251,45 @@ protected:
         }
     }*/
 
+    inline void computePolygonNormal( SPtr<MbGrid> pGrid )
+    {
+
+        if(pGrid->NormalsCount() != pGrid->PointsCount())
+        {
+            //todo pGrid->RemoveRedundantPoints(true, std::numeric_limits<double>::epsilon());
+
+            for( size_t i = 0, c = pGrid->NormalsCount(); i < c; ++i )
+                pGrid->AddNormal(MbVector3D());
+
+            for( size_t i = pGrid->NormalsCount(), c = pGrid->PointsCount(); i < c; ++i )
+                pGrid->AddNormal(MbVector3D());
+
+            for(size_t c = pGrid->TrianglesCount(), iTriangle = 0; iTriangle < c; ++iTriangle)
+            {
+                uint index_0 = 0;
+                uint index_1 = 0;
+                uint index_2 = 0;
+                pGrid->GetTriangleIndex(iTriangle,index_0, index_1, index_2);
+
+                MbCartPoint3D p0; pGrid->GetPoint(index_0, p0);
+                MbCartPoint3D p1; pGrid->GetPoint(index_1, p1);
+                MbCartPoint3D p2; pGrid->GetPoint(index_2, p2);
+
+                MbVector3D n0; pGrid->GetNormal(index_0, n0);
+                MbVector3D n1; pGrid->GetNormal(index_1, n1);
+                MbVector3D n2; pGrid->GetNormal(index_2, n2);
+
+                const MbVector3D v1(p1, p0);
+                const MbVector3D v2(p1, p2);
+                MbVector3D nTrianlge = v2|v1; nTrianlge.Normalize();
+
+                n0 += nTrianlge; n0.Normalize();pGrid->SetNormal(index_0, n0);
+                n1 += nTrianlge; n1.Normalize();pGrid->SetNormal(index_1, n1);
+                n2 += nTrianlge; n2.Normalize();pGrid->SetNormal(index_2, n2);
+            }
+        }
+    }
+
     void convertTriangulatedFaceSet(shared_ptr<IfcTriangulatedFaceSet> tri_face_set,
             size_t coordinate_count,
             SPtr<MbMesh> pMesh)
@@ -273,18 +297,43 @@ protected:
         if(!tri_face_set->m_Coordinates)
             return;    
 
-        if(tri_face_set->m_Closed)
-            pMesh->SetClosed(tri_face_set->m_Closed->m_value);
+        pMesh->SetClosed(tri_face_set->m_Closed && tri_face_set->m_Closed->m_value);
+
+        size_t const pn_index_count = tri_face_set->m_PnIndex.size();
+
+        auto check_and_add = [&coordinate_count](shared_ptr<IfcPositiveInteger> const& index)
+        {
+            if(!index)
+                return true;
+            if(1 > index->m_value || coordinate_count < index->m_value)
+                return true;
+
+            return false;
+        };
+
+        auto check_and_add_indirect = [&](shared_ptr<IfcPositiveInteger> const& pn_index)
+        {
+            if(!pn_index)
+                return true;
+            if(1 > pn_index->m_value || pn_index_count < pn_index->m_value)
+                return true;
+            return check_and_add(tri_face_set->m_PnIndex[pn_index->m_value - 1]);
+        };
 
         SPtr<MbGrid> pGrid = SPtr<MbGrid>(pMesh->AddGrid());
         copyVertices(tri_face_set->m_Coordinates, pGrid);
 
-        size_t const pn_index_count = tri_face_set->m_PnIndex.size();
+        const size_t nIndices = tri_face_set->m_CoordIndex.size();
 
         for(auto&& tri_index : tri_face_set->m_CoordIndex)
         {
             std::vector<MbCartPoint3D> points;
             auto&& ifcPoints = tri_face_set->m_Coordinates->m_CoordList;
+
+            if((pn_index_count)
+                ? std::any_of(tri_index.cbegin(), tri_index.cend(), check_and_add_indirect)
+                : std::any_of(tri_index.cbegin(), tri_index.cend(), check_and_add))
+                continue;
 
             if(tri_index.size() == 3)
             {
@@ -299,11 +348,14 @@ protected:
                     const uint index_1 = tri_index[0]->m_value - 1;
                     const uint index_2 = tri_index[1]->m_value - 1;
                     const uint index_3 = tri_index[2]->m_value - 1;
+
                     pGrid->AddTriangle(index_1, index_2, index_3, true);
                 }
 
             }
         };      
+
+        computePolygonNormal(pGrid);
         /*
         //indexing changes if PnIndex is present:
         //no PnIndex -> CoordIndex is 1-based index into Coordinates
