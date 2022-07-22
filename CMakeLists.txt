@@ -13,7 +13,7 @@ add_subdirectory (IfcPlusPlus)
 add_subdirectory (api-client)
 add_subdirectory (external/c3dkernel)
 
-add_executable(${TARGET_NAME} src/main.cpp)
+add_executable(${TARGET_NAME} src/main.cpp src/base64.cpp)
 
 target_link_libraries(${TARGET_NAME} PRIVATE 
     IfcPlusPlus
