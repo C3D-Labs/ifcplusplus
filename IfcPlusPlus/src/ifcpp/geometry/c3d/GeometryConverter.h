@@ -54,7 +54,7 @@ protected:
     //shared_ptr<GeometrySettings>            m_geom_settings;
     shared_ptr<RepresentationConverter>     m_representation_converter;
 
-    std::map<std::string, shared_ptr<ProductShapeData> >    m_product_shape_data;
+    std::map<std::wstring, shared_ptr<ProductShapeData> >    m_product_shape_data;
     std::map<std::string, shared_ptr<BuildingObject> >      m_map_outside_spatial_structure;
     double m_recent_progress = 0;
     double m_csg_eps = 1.5e-05;
@@ -65,7 +65,7 @@ public:
     shared_ptr<BuildingModel>&                      getBuildingModel() { return m_ifc_model; }
     shared_ptr<RepresentationConverter>&            getRepresentationConverter() { return m_representation_converter; }
     //shared_ptr<GeometrySettings>&                   getGeomSettings() { return m_geom_settings; }
-    std::map<std::string, shared_ptr<ProductShapeData> >&   getShapeInputData() { return m_product_shape_data; }
+    std::map<std::wstring, shared_ptr<ProductShapeData> >&   getShapeInputData() { return m_product_shape_data; }
     std::map<std::string, shared_ptr<BuildingObject> >&     getObjectsOutsideSpatialStructure() { return m_map_outside_spatial_structure; }
 
     GeometryConverter( shared_ptr<BuildingModel>& ifc_model )
@@ -81,6 +81,15 @@ public:
         m_representation_converter->setMessageTarget( this );
     }
     virtual ~GeometryConverter() {}
+
+    shared_ptr<ProductShapeData> GetProductShape( const std::wstring& global_id )
+    {
+        auto it = m_product_shape_data.find(global_id);
+        if(it != m_product_shape_data.end())
+            return it->second;
+
+        return {};
+    }
 
     void resetModel()
     {
@@ -460,7 +469,7 @@ public:
                 }
 
                 {
-                    auto test = m_product_shape_data.insert( std::make_pair( guid, product_geom_input_data ) );
+                    auto test = m_product_shape_data.insert( std::make_pair( guid_wstr, product_geom_input_data ) );
 
                     if( thread_err.tellp() > 0 )
                     {
