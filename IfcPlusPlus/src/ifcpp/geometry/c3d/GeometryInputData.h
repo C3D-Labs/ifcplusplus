@@ -545,6 +545,7 @@ class ProductShapeData
 {
 public:
     std::wstring m_entity_guid;
+    std::string  m_math_uuid;
     weak_ptr<IfcObjectDefinition>                       m_ifc_object_definition;
     weak_ptr<IfcObjectPlacement>                        m_object_placement;
     std::vector<shared_ptr<RepresentationData> >        m_vec_representations;

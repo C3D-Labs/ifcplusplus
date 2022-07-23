@@ -1,6 +1,8 @@
 #include <unordered_set>
 #include <locale>
 #include <codecvt>
+#include <thread>
+#include <chrono>
 
 #include <ifcpp/IFC4/include/IfcBuildingStorey.h>
 #include <ifcpp/IFC4/include/IfcGloballyUniqueId.h>
@@ -30,6 +32,7 @@
 
 
 using namespace org::openapitools::client;
+using namespace std::chrono_literals;
 
 
 struct NodeTreeItem
@@ -156,8 +159,13 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
         {
             if( auto&& shape = geoms(ifc_product->m_GlobalId->toString()) )
             {
-                if( auto pMathItam = shape->toMathItem())
-                    math_children.push_back(pMathItam);
+                if( auto pMathItem = shape->toMathItem()){
+                    math_children.push_back(pMathItem);
+                    // assign the 3d geometry to the node
+                    item.rep_uuid = shape->m_math_uuid;
+                    // generate UUID for the node, to using the item in Web visualization
+                    item.item_uuid = createGUID32();
+                }
             }
 
             GeomUtils::GetC3dPlacement3D(dynamic_pointer_cast<IfcLocalPlacement>( ifc_product->m_ObjectPlacement), placement);
@@ -191,6 +199,23 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
     return item;
 }
 
+template<typename Func>
+pplx::task<void> doWhile(Func func)
+{
+  //static_assert(
+  //  std::is_same_v<decltype(func()), bool> ||
+  //  std::is_same_v<decltype(func()), pplx::task<bool>>);
+
+  return pplx::create_task(func)
+
+    .then([func](bool needToContinue)
+    {
+      if (needToContinue)
+        return doWhile(func);
+
+      return pplx::task_from_result();
+    });
+}
 
 int main()
 {
@@ -199,112 +224,153 @@ int main()
     apiConfig->setBaseUrl("http://127.0.0.1:12344/v1");
     apiClient->setConfiguration(apiConfig);
 
-    // testing service
-    std::shared_ptr<api::MonitorApi>  monitor(new api::MonitorApi(apiClient));
+    std::shared_ptr<api::MonitorApi>  monitor_api(new api::MonitorApi(apiClient));
+    std::shared_ptr<api::CacheApi>    cache_api(new api::CacheApi(apiClient));
 
-    try
-    {
-        auto task = monitor->getStatus()
-        .then([=](){
-            std::cout << "servce is active" << std::endl;
-        })
-        .wait();
-    }
-    catch(const std::exception& e)
-    {
-        std::cout << "servce is not active" << std::endl 
-        << e.what() << std::endl;
-        return 1;
-    }
+    shared_ptr<BuildingModel>           ifc_model;
+    shared_ptr<ReaderSTEP>              step_reader;
+    std::shared_ptr<GeometryConverter>  ifc_geom_converter;
 
-    // 1: create an IFC model and a reader for IFC files in STEP format:
-    shared_ptr<BuildingModel> ifc_model(new BuildingModel());
-    shared_ptr<ReaderSTEP> step_reader(new ReaderSTEP());
 
-    // 2: load the model:
-    step_reader->loadModelFromFile( L"example_.ifc", ifc_model);
+    std::string  model_uuid;
+    NodeTreeItem root_item;
 
-    GeometryMap geometry_map{
-        std::shared_ptr<GeometryConverter>(new GeometryConverter(ifc_model))
-    };
-    geometry_map.m_converter->convertGeometry();
+    auto task_  = monitor_api->getStatus()
+    // check service
+    .then([&]{
+        std::cout << "Servce is active" << std::endl;
+    })
+    // load model
+    .then([&]{
+        std::cout << "Loading file" << std::endl;
+        ifc_model.reset(new BuildingModel());
+        step_reader.reset(new ReaderSTEP());
+        step_reader->loadModelFromFile( L"example_.ifc", ifc_model);
+    })
+    // build geometry
+    .then([&]{
+        std::cout << "Building geometry" << std::endl;
+        ifc_geom_converter.reset(new GeometryConverter(ifc_model));
+        ifc_geom_converter->convertGeometry();
+    })
+    // sending geometry
+    .then([&]{
+        std::cout << "Sending geometry to service" << std::endl;
+        std::shared_ptr<model::CacheGeometry_request> request(new model::CacheGeometry_request());
 
-    // save to file
-    auto assm = new MbAssembly();
-    for(auto&& data : geometry_map.m_converter->getShapeInputData())
-    {
-        if( auto ptr = data.second->toMathItem())
-            assm->AddItem(*ptr);
-        //break;
-    }
-
-    // 4: traverse tree structure of model, starting at root object (IfcProject)
-    shared_ptr<IfcProject> ifc_project = ifc_model->getIfcProject();
-    std::unordered_set<int> set_visited;
-    auto root_item = resolveTreeItems(ifc_project, set_visited, geometry_map);
-
-    std::shared_ptr<api::CacheApi> cache(new api::CacheApi(apiClient));
-
-    if(root_item.math_item)
-    {
-        //c3d::ExportIntoFile(*root_item.math_item, "example.c3d");
-
-        for(auto&& shapeData :geometry_map.m_converter->getShapeInputData())
+        const bool sendToService = true;
+        const bool saveToFile = false;
+        for(auto&& shapeData :ifc_geom_converter->getShapeInputData())
         {
             auto pMathItem = shapeData.second->toMathItem();
-            c3d::C3DExchangeBuffer buffer;
-            MbeConvResType res = c3d::ExportIntoBuffer(*pMathItem, mxf_C3D, buffer);
-            if(res == MbeConvResType::cnv_Success)
-            {                
-                std::string base64 = base64_encode(reinterpret_cast<const unsigned char*>(buffer.Data()), buffer.Count(), false );
-                //std::ofstream file("example_2.c3d", std::ios::binary);
-                //file.write(buffer.Data(), buffer.Count());
+            if(pMathItem)
+            {
+                // save MbItem to c3d buffer
+                c3d::C3DExchangeBuffer buffer;
+                MbeConvResType res = c3d::ExportIntoBuffer(*pMathItem, mxf_C3D, buffer);
+                std::string geom_uuid;
 
-                std::shared_ptr<model::CacheGeometry_request> request(new model::CacheGeometry_request());
-                request->setFileContent(base64);
-                request->setBuilder("c3d");
+                if(sendToService) //send the c3d buffer like base64 to serivce
+                {
+                    std::string base64 = base64_encode(reinterpret_cast<const unsigned char*>(buffer.Data()), buffer.Count(), false );
+                    request->setFileContent(base64);
+                    request->setBuilder("c3d");
 
-                //try
-                //{
-                //    auto task = cache->cacheGeometry(request)
-                //    .then([=](pplx::task<std::__cxx11::string> uuid){
-                //        std::cout << "Geometry is sended on service"<< std::endl 
-                //                  << "UUID: " << uuid.get() << std::endl;
-                //    })
-                //    .wait();
-                //}
-                //catch(const std::exception& e)
-                //{
-                //    std::cerr << e.what() << '\n';
-                //}
+                    cache_api->cacheGeometry(request)
+                    .then([&](std::string uuidGeom){
+                        geom_uuid = uuidGeom;
+                        return doWhile([=]{
+                            std::this_thread::sleep_for(100ms);
+                            double progress = 0.0;
+                            try{
+                                auto status = cache_api->getGeometry(geom_uuid,{}).get();
+                                progress = status->getProgress();
+                            } 
+                            catch(const api::ApiException& api)
+                            {
+                                if(api.error_code().value() != 404){
+                                    throw;
+                                }
+                            }
+                            catch(...)
+                            {
+                                throw;
+                            }
+
+                            return progress < 1.0;
+                        });
+                    }).get();
+                }
+
+                if(saveToFile) //save c3d buffer to file
+                {
+                    if(geom_uuid.empty()){
+                        geom_uuid = createGUID32();
+                    }
+                    
+                    std::ofstream file(geom_uuid + ".c3d", std::ios::binary);
+                    file.write(buffer.Data(), buffer.Count());
+                }
+
+                shapeData.second->m_math_uuid = geom_uuid;
+            }
+        }
+    })
+    // build structure
+    .then([&]{
+        GeometryMap geometry_map{
+            ifc_geom_converter
+        };
+
+        std::unordered_set<int> set_visited;
+        root_item = resolveTreeItems(ifc_model->getIfcProject(), set_visited, geometry_map);
+
+        std::cout << "Building structure" << std::endl;
+    })
+    // sending structure
+    .then([&]{
+        std::cout << "Sending structure to service" << std::endl;
+
+        const bool sendToService = true;
+        const bool saveToFile = true;
+
+        if(root_item.web_item && sendToService)
+        {
+            auto task = cache_api->cacheComposeModel(root_item.web_item);
+            model_uuid = task.get();
+            std::cout << "model UUID: " << model_uuid << std::endl;
+        }
+
+        // save to json file:
+        if(saveToFile)
+        {
+            auto jsonModel = root_item.web_item->toJson();
+
+            if(model_uuid.empty()){
+                model_uuid = createGUID32();
             }
 
-            break;
+            std::ofstream jsonFile(model_uuid + ".json");
+            jsonModel.serialize(jsonFile);
         }
-    }
 
-    //if(!root_item)
-    //    return 1;
+        return model_uuid;
+    });
 
-    // init 
-    
-    //cache->cacheGeometry()
-    //std::shared_ptr<model::CacheGeometry_request> request;
-
-    /*try
+    /* Run the converter */
+    try
     {
-        auto task = cache->cacheComposeModel(root_item)
-        .then([=](pplx::task<std::string> uuid){
-            std::cout << "Model is chached on service"<< std::endl 
-            << "UUID: " << uuid.get() << std::endl;
-        })
-        .wait();
+        model_uuid = task_.get();
+    }
+    catch(const api::ApiException& api)
+    {
+        std::cout << "Error: " << api.error_code().value() <<  std::endl
+                  << api.error_code().message() << std::endl;
     }
     catch(const std::exception& e)
     {
-        std::cout << e.what() << std::endl;
-        return 1;
-    }*/
+        std::cerr << e.what() << '\n';
+    }
 
     return 0;
 }
