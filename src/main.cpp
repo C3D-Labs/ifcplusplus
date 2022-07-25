@@ -30,9 +30,12 @@
 
 #include "base64.h"
 
+#include "boost/program_options.hpp"
+
 
 using namespace org::openapitools::client;
 using namespace std::chrono_literals;
+namespace po = boost::program_options;
 
 
 struct NodeTreeItem
@@ -217,11 +220,43 @@ pplx::task<void> doWhile(Func func)
     });
 }
 
-int main()
+int main(int ac, char *av[])
 {
+    // Declare the supported options.
+    po::options_description desc("Allowed options");
+
+    desc.add_options()
+        ("help", "produce help message")
+        ("input-file,f", po::value<std::string>(), "input file")
+        ("service-url,s", po::value<std::string>(), "service-api url addres")
+    ;
+    po::positional_options_description p;
+    p.add("input-file", -1);
+    po::variables_map vm;
+    po::store(po::command_line_parser(ac, av).
+            options(desc).positional(p).run(), vm);
+
+    std::wstring input_file = L"example_.ifc";
+    std::string service_addr = "http://127.0.0.1:12344/v1";
+
+    if (vm.count("help")) {
+        std::cout << desc << "\n";
+        return 1;
+    }
+
+    if (vm.count("input-file")){
+        using convert_t = std::codecvt_utf8<wchar_t>;
+        std::wstring_convert<convert_t, wchar_t> strconverter;
+        input_file = strconverter.from_bytes(vm["input-file"].as<std::string>());
+    }
+        
+    if (vm.count("service-url"))
+        service_addr = vm["service-url"].as<std::string>();
+
+
     std::shared_ptr<api::ApiClient> apiClient(new api::ApiClient);
     std::shared_ptr<api::ApiConfiguration> apiConfig(new api::ApiConfiguration);
-    apiConfig->setBaseUrl("http://127.0.0.1:12344/v1");
+    apiConfig->setBaseUrl(service_addr);
     apiClient->setConfiguration(apiConfig);
 
     std::shared_ptr<api::MonitorApi>  monitor_api(new api::MonitorApi(apiClient));
@@ -280,17 +315,11 @@ int main()
                     .then([&](std::string uuidGeom){
                         geom_uuid = uuidGeom;
                         return doWhile([=]{
-                            std::this_thread::sleep_for(100ms);
+                            std::this_thread::sleep_for(50ms);
                             double progress = 0.0;
                             try{
                                 auto status = cache_api->getGeometry(geom_uuid,{}).get();
                                 progress = status->getProgress();
-                            } 
-                            catch(const api::ApiException& api)
-                            {
-                                if(api.error_code().value() != 404){
-                                    throw;
-                                }
                             }
                             catch(...)
                             {
