@@ -19,6 +19,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     IfcPlusPlus
     c3dservice-api
     boost_system
+    boost_program_options
     c3d
     pthread
     )
