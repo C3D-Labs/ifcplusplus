@@ -236,7 +236,7 @@ int main(int ac, char *av[])
     po::store(po::command_line_parser(ac, av).
             options(desc).positional(p).run(), vm);
 
-    std::wstring input_file = L"example_.ifc";
+    std::wstring input_file = L"example.ifc";
     std::string service_addr = "http://127.0.0.1:12344/v1";
 
     if (vm.count("help")) {
@@ -277,10 +277,10 @@ int main(int ac, char *av[])
     })
     // load model
     .then([&]{
-        std::cout << "Loading file" << std::endl;
+        std::wcout << L"Loading file " << input_file << std::endl;
         ifc_model.reset(new BuildingModel());
         step_reader.reset(new ReaderSTEP());
-        step_reader->loadModelFromFile( L"example_.ifc", ifc_model);
+        step_reader->loadModelFromFile( input_file, ifc_model);
     })
     // build geometry
     .then([&]{
@@ -293,7 +293,7 @@ int main(int ac, char *av[])
         std::cout << "Sending geometry to service" << std::endl;
         std::shared_ptr<model::CacheGeometry_request> request(new model::CacheGeometry_request());
 
-        const bool sendToService = true;
+        const bool sendToService = false;
         const bool saveToFile = false;
         for(auto&& shapeData :ifc_geom_converter->getShapeInputData())
         {
@@ -305,6 +305,11 @@ int main(int ac, char *av[])
                 MbeConvResType res = c3d::ExportIntoBuffer(*pMathItem, mxf_C3D, buffer);
                 std::string geom_uuid;
 
+                if(res != MbeConvResType::cnv_Success){
+                    std::cerr << "Error save to buffer " << res << std::endl;
+                    return;
+                }
+
                 if(sendToService) //send the c3d buffer like base64 to serivce
                 {
                     std::string base64 = base64_encode(reinterpret_cast<const unsigned char*>(buffer.Data()), buffer.Count(), false );
@@ -315,7 +320,7 @@ int main(int ac, char *av[])
                     .then([&](std::string uuidGeom){
                         geom_uuid = uuidGeom;
                         return doWhile([=]{
-                            std::this_thread::sleep_for(50ms);
+                            std::this_thread::sleep_for(200ms);
                             double progress = 0.0;
                             try{
                                 auto status = cache_api->getGeometry(geom_uuid,{}).get();
@@ -330,14 +335,13 @@ int main(int ac, char *av[])
                         });
                     }).get();
                 }
-
                 if(saveToFile) //save c3d buffer to file
                 {
                     if(geom_uuid.empty()){
                         geom_uuid = createGUID32();
                     }
                     
-                    std::ofstream file(geom_uuid + ".c3d", std::ios::binary);
+                    std::ofstream file("./c3d/" + geom_uuid + ".c3d", std::ios::binary);
                     file.write(buffer.Data(), buffer.Count());
                 }
 
@@ -360,7 +364,7 @@ int main(int ac, char *av[])
     .then([&]{
         std::cout << "Sending structure to service" << std::endl;
 
-        const bool sendToService = true;
+        const bool sendToService = false;
         const bool saveToFile = true;
 
         if(root_item.web_item && sendToService)
@@ -371,7 +375,7 @@ int main(int ac, char *av[])
         }
 
         // save to json file:
-        if(saveToFile)
+        if(root_item.web_item && saveToFile)
         {
             auto jsonModel = root_item.web_item->toJson();
 
@@ -381,6 +385,9 @@ int main(int ac, char *av[])
 
             std::ofstream jsonFile(model_uuid + ".json");
             jsonModel.serialize(jsonFile);
+
+            if(root_item.math_item)
+                c3d::ExportIntoFile(*root_item.math_item, model_uuid + ".c3d");
         }
 
         return model_uuid;
