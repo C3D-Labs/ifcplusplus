@@ -103,7 +103,7 @@ public:
         progressValueCallback( 0.0, "parse" );
 
 #ifdef _DEBUG
-        GeomDebugDump::clearMeshsetDump();
+        //GeomDebugDump::clearMeshsetDump();
 #endif
     }
 

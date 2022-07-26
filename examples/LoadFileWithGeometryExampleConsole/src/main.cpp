@@ -9,7 +9,7 @@
 #include <ifcpp/IFC4/include/IfcText.h>
 #include <ifcpp/model/BuildingModel.h>
 #include <ifcpp/reader/ReaderSTEP.h>
-#include <ifcpp/geometry/Carve/GeometryConverter.h>
+#include <ifcpp/geometry/c3d/GeometryConverter.h>
 
 class MyIfcTreeItem
 {
@@ -170,20 +170,10 @@ int main()
 
 	// 2: load the model:
 	std::cout << "Loading IFC model: ";
-	step_reader->loadModelFromFile( L"exampleäöüßÄÖÜ.ifc", ifc_model);
+	step_reader->loadModelFromFile( LR"(G:\projects\ifc\ifcplusplus\build\example.ifc)", ifc_model);
 
 	shared_ptr<GeometryConverter> geometry_converter(new GeometryConverter(ifc_model));
 	geometry_converter->setMessageCallBack(&mh, &MessageHandler::slotMessageWrapper);
-	shared_ptr<GeometrySettings> geom_settings = geometry_converter->getGeomSettings();
-
-	// the number of vertices per circle can be changed here: (default is 14)
-	int numVerticesPerCircle = geom_settings->getNumVerticesPerCircle();
-	std::cout << std::endl << "numVerticesPerCircle: " << numVerticesPerCircle << std::endl;
-	geom_settings->setNumVerticesPerCircle(numVerticesPerCircle);
-
-	// adjust epsilon for boolean operations
-	geometry_converter->setCsgEps(1.5e-9);
-
 	// convert IFC geometry representations to Carve meshes
 	std::cout << "Converting IFC geometry: ";
 	geometry_converter->convertGeometry();

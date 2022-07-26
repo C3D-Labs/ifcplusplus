@@ -24,6 +24,8 @@ ENDIF(NOT WIN32)
 #set(IFCPP_CONFIG_DIR "share/IFCPP/cmake")
 #ADD_SUBDIRECTORY (external/Carve)
 ADD_SUBDIRECTORY (IfcPlusPlus)
+ADD_SUBDIRECTORY (external/c3dkernel)
+ADD_SUBDIRECTORY (examples/LoadFileWithGeometryExampleConsole)
 
 # Install configuration file
 #INCLUDE(CMakePackageConfigHelpers)

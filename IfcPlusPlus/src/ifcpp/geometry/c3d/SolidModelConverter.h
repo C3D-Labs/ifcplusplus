@@ -75,6 +75,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <mesh_primitive.h>
 #include <mesh_polygon.h>
 
+#include <conv_topo_mesh.h>
+
 
 
 class SolidModelConverter : public StatusCallback
@@ -244,8 +246,8 @@ public:
             shared_ptr<IfcFacetedBrep> faceted_brep = dynamic_pointer_cast<IfcFacetedBrep>( manifold_solid_brep );
             if( faceted_brep )
             {
-                std::cout << "IfcFacetedBrep" << std::endl;
-                //convertIfcFacetedBrep(faceted_brep)
+                //std::cout << "IfcFacetedBrep" << std::endl;
+                convertIfcFacetedBrep(faceted_brep, item_data);
                 return;
             }
 
@@ -393,7 +395,7 @@ public:
                 
                 }
                 if ( !c3dGridSpatialPoints.empty() ) {
-                    //c3dGrid = SPtr<MbGrid>( CreateGridByPolyonPoints( c3dGridSpatialPoints ) );
+                    c3dGrid = SPtr<MbGrid>( CreateGridByPolyonPoints( c3dGridSpatialPoints ) );
                     if ( pMesh.is_null() ) {
                         pMesh.assign( new MbMesh() );
                     }

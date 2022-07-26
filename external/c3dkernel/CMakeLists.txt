@@ -15,10 +15,16 @@ target_include_directories( ${TARGET_NAME}
     INTERFACE ${C3D_Kernel_INCLUDE_DIR}
 )
 
+if(UNIX)
+    set(C3D_LIB_NAME lib${TARGET_NAME}.so)
+else()
+    set(C3D_LIB_NAME ${TARGET_NAME}.dll)
+endif()
+
 set_target_properties(${TARGET_NAME} PROPERTIES
              IMPORTED_CONFIGURATIONS "RELEASE;DEBUG"
-             IMPORTED_LOCATION_RELEASE "${C3D_Kernel_LIB_DIR}/Release/lib${TARGET_NAME}.so"
-             IMPORTED_LOCATION_DEBUG   "${C3D_Kernel_LIB_DIR}/Debug/lib${TARGET_NAME}.so"
-             IMPORTED_IMPLIB_RELEASE   "${C3D_Kernel_LIB_DIR}/Release/${TARGET_NAME}.lib"
-             IMPORTED_IMPLIB_DEBUG     "${C3D_Kernel_LIB_DIR}/Debug/${TARGET_NAME}.lib"
+             IMPORTED_LOCATION_RELEASE "${C3D_Kernel_LIB_DIR}/Release/${C3D_LIB_NAME}"
+             IMPORTED_LOCATION_DEBUG   "${C3D_Kernel_LIB_DIR}/Debug/${C3D_LIB_NAME}"
+             IMPORTED_IMPLIB_RELEASE   "${C3D_Kernel_LIB_DIR}/Release/math.lib"
+             IMPORTED_IMPLIB_DEBUG     "${C3D_Kernel_LIB_DIR}/Debug/math.lib"
              )

@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED (VERSION 3.7.2)
+CMAKE_MINIMUM_REQUIRED (VERSION 3.14)
 
 IF(NOT WIN32)
     IF(NOT CMAKE_BUILD_TYPE)
@@ -30,11 +30,13 @@ ADD_EXECUTABLE(LoadFileWithGeometryExampleConsole
 
 set_target_properties(LoadFileWithGeometryExampleConsole PROPERTIES DEBUG_POSTFIX "d")
 
-if(OpenMP_CXX_FOUND)
-    TARGET_LINK_LIBRARIES(LoadFileWithGeometryExampleConsole optimized IfcPlusPlus OpenMP::OpenMP_CXX debug IfcPlusPlusd )
-else(OpenMP_CXX_FOUND)
-	TARGET_LINK_LIBRARIES(LoadFileWithGeometryExampleConsole optimized IfcPlusPlus debug IfcPlusPlusd)
-endif()
+#if(OpenMP_CXX_FOUND)
+#    TARGET_LINK_LIBRARIES(LoadFileWithGeometryExampleConsole optimized IfcPlusPlus OpenMP::OpenMP_CXX debug IfcPlusPlusd )
+#else(OpenMP_CXX_FOUND)
+#	TARGET_LINK_LIBRARIES(LoadFileWithGeometryExampleConsole optimized IfcPlusPlus debug IfcPlusPlusd)
+#endif()
+
+TARGET_LINK_LIBRARIES(LoadFileWithGeometryExampleConsole PRIVATE IfcPlusPlus c3d)
 
 IF(BUILD_STATIC_LIBRARY)
 	ADD_DEFINITIONS(-DIFCQUERY_STATIC_LIB)
