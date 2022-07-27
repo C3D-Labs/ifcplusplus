@@ -1,7 +1,7 @@
 
 # install dependencies
 ```
-sudo apt install -y libcpprest-dev
+sudo apt install -y libcpprest-dev libboost-program-options-dev
 ```
 
 # generate client
