@@ -224,9 +224,11 @@ public:
         applyTransformToItem( transform->m_matrix, true );
     }*/
 
-    /*void applyTransformToItem( const MbMatrix3D& mat, bool matrix_identity_checked = false )
+    void applyTransformToItem( const MbMatrix3D& mat, bool matrix_identity_checked = false )
     {
-        if( !matrix_identity_checked )
+        if(m_pMathItem)
+            m_pMathItem->Transform(mat);
+        /*if( !matrix_identity_checked )
         {
             if( GeomUtils::isMatrixIdentity( mat ) )
             {
@@ -288,8 +290,8 @@ public:
         {
             shared_ptr<TextItemData>& text_literals = m_vec_text_literals[text_i];
             text_literals->m_text_position = mat*text_literals->m_text_position;
-        }
-    }*/
+        }*/
+    }
 
     /*shared_ptr<ItemShapeData> getItemShapeDataDeepCopy()
     {
@@ -516,20 +518,20 @@ public:
         m_representation_type = L"";
     }
     
-    /*void applyTransformToRepresentation( const MbMatrix3D& matrix, bool matrix_identity_checked = false )
+    void applyTransformToRepresentation( const MbMatrix3D& matrix, bool matrix_identity_checked = false )
     {
-        if( !matrix_identity_checked )
-        {
-            if( GeomUtils::isMatrixIdentity( matrix ) )
-            {
-                return;
-            }
-        }
+        //if( !matrix_identity_checked )
+        //{
+        //    if( GeomUtils::isMatrixIdentity( matrix ) )
+        //    {
+        //        return;
+        //    }
+        //}
         for( size_t i_item = 0; i_item < m_vec_item_data.size(); ++i_item )
         {
             m_vec_item_data[i_item]->applyTransformToItem( matrix, matrix_identity_checked );
         }
-    }*/
+    }
 
     /*void computeBoundingBox( carve::geom::aabb<3>& bbox ) const
     {

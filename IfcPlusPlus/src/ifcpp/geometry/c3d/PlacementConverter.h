@@ -119,7 +119,7 @@ public:
     
     void convertIfcAxis2Placement3D( const shared_ptr<IfcAxis2Placement3D>& axis2placement3d, shared_ptr<TransformData>& resulting_matrix, bool only_rotation = false )
     {
-        const double length_factor = m_unit_converter->getLengthInMeterFactor();
+        const double length_factor = m_unit_converter ? m_unit_converter->getLengthInMeterFactor() : 1.0;
         vec3  translate( 0.0, 0.0, 0.0 );
         vec3  local_x(   1.0, 0.0, 0.0 );
         vec3  local_y(   0.0, 1.0, 0.0 );
@@ -309,7 +309,7 @@ public:
 
     inline void convertIfcPlacement( const shared_ptr<IfcPlacement>& placement, shared_ptr<TransformData>& resulting_matrix, bool only_rotation = false )
     {
-        const double length_factor = m_unit_converter->getLengthInMeterFactor();
+        const double length_factor = m_unit_converter ? m_unit_converter->getLengthInMeterFactor() : 1.0;
         if( dynamic_pointer_cast<IfcAxis1Placement>( placement ) )
         {
             messageCallback( "IfcAxis1Placement not implemented", StatusCallback::MESSAGE_TYPE_ERROR, __FUNC__, placement.get() );
@@ -447,19 +447,19 @@ public:
         }
     }
 
-    /*
+
     void convertTransformationOperator( const shared_ptr<IfcCartesianTransformationOperator>& transform_operator, shared_ptr<TransformData>& resulting_matrix )
     {
         // ENTITY IfcCartesianTransformationOperator  ABSTRACT SUPERTYPE OF(ONEOF(IfcCartesianTransformationOperator2D, IfcCartesianTransformationOperator3D))
-        vec3  translate( carve::geom::VECTOR( 0.0, 0.0, 0.0 ) );
-        vec3  local_x( carve::geom::VECTOR( 1.0, 0.0, 0.0 ) );
-        vec3  local_y( carve::geom::VECTOR( 0.0, 1.0, 0.0 ) );
-        vec3  local_z( carve::geom::VECTOR( 0.0, 0.0, 1.0 ) );
+        vec3  translate( 0.0, 0.0, 0.0 );
+        MbVector3D  local_x( 1.0, 0.0, 0.0 );
+        MbVector3D  local_y( 0.0, 1.0, 0.0 );
+        MbVector3D  local_z( 0.0, 0.0, 1.0 );
 
         double scale = 1.0;
         double scale_y = 1.0;
         double scale_z = 1.0;
-        const double length_factor = m_unit_converter->getLengthInMeterFactor();
+        const double length_factor = m_unit_converter ? m_unit_converter->getLengthInMeterFactor() : 1.0;
 
         shared_ptr<IfcCartesianTransformationOperator2D> trans_operator_2d = dynamic_pointer_cast<IfcCartesianTransformationOperator2D>( transform_operator );
         if( trans_operator_2d )
@@ -477,7 +477,7 @@ public:
             }
             double x = trans_operator_2d->m_LocalOrigin->m_Coordinates[0]->m_value*length_factor;
             double y = trans_operator_2d->m_LocalOrigin->m_Coordinates[1]->m_value*length_factor;
-            translate = carve::geom::VECTOR( x, y, 0.0 );
+            translate = vec3( x, y, 0.0 );
 
             if( trans_operator_2d->m_Scale )
             {
@@ -533,7 +533,7 @@ public:
                 messageCallback( "LocalOrigin is not valid", StatusCallback::MESSAGE_TYPE_ERROR, __FUNC__, trans_operator_3d.get() );
                 return;
             }
-            if( GeomUtils::allPointersValid( trans_operator_3d->m_LocalOrigin->m_Coordinates ) )
+            //todo if( GeomUtils::allPointersValid( trans_operator_3d->m_LocalOrigin->m_Coordinates ) )
             {
                 translate.x = trans_operator_3d->m_LocalOrigin->m_Coordinates[0]->m_value*length_factor;
                 translate.y = trans_operator_3d->m_LocalOrigin->m_Coordinates[1]->m_value*length_factor;
@@ -591,21 +591,25 @@ public:
                 }
             }
         }
-        local_x.normalize();
-        local_y.normalize();
-        local_z.normalize();
+        local_x.Normalize();
+        local_y.Normalize();
+        local_z.Normalize();
 
         if( !resulting_matrix )
         {
             resulting_matrix = shared_ptr<TransformData>( new TransformData() );
         }
-        carve::math::Matrix rotate_translate(
-            local_x.x, local_y.x, local_z.x, translate.x,
-            local_x.y, local_y.y, local_z.y, translate.y,
-            local_x.z, local_y.z, local_z.z, translate.z,
-            0, 0, 0, 1 );
-        resulting_matrix->m_matrix = rotate_translate*carve::math::Matrix::SCALE( scale, scale_y, scale_z ); // scale is applied first, rotate second
+
+        MbMatrix3D rotate_translate;
+        rotate_translate.SetAxisX() = local_x;
+        rotate_translate.SetAxisY() = local_y;
+        rotate_translate.SetAxisZ() = local_z;
+        rotate_translate.SetOrigin() = translate;
+
+        MbMatrix3D scale_m; scale_m.Scale(scale, scale_y, scale_z);
+
+        resulting_matrix->m_matrix = rotate_translate*scale_m; // scale is applied first, rotate second
         resulting_matrix->m_placement_entity = transform_operator;
         resulting_matrix->m_placement_entity_id = transform_operator->m_entity_id;
-    }*/
+    }
 };

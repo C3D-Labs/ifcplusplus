@@ -58,7 +58,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <ifcpp/IFC4/include/IfcTextLiteral.h>
 
 //#include "IncludeCarveHeaders.h"
-//#include "GeometryInputData.h"
+#include "GeometryInputData.h"
 //#include "Sweeper.h"
 //#include "SplineConverter.h"
 //#include "PointConverter.h"
@@ -66,6 +66,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include "SolidModelConverter.h"
 //#include "FaceConverter.h"
 //#include "ProfileCache.h"
+#include "PlacementConverter.h"
 #include "TessellatedItemConverter.h"
 
 class RepresentationConverter : public StatusCallback
@@ -77,7 +78,7 @@ protected:
     //shared_ptr<PointConverter>          m_point_converter;
     //shared_ptr<SplineConverter>         m_spline_converter;
     //shared_ptr<Sweeper>                 m_sweeper;
-    //shared_ptr<PlacementConverter>      m_placement_converter;
+    shared_ptr<PlacementConverter>      m_placement_converter;
     //shared_ptr<CurveConverter>          m_curve_converter;
     //shared_ptr<ProfileCache>            m_profile_cache;
     //shared_ptr<FaceConverter>           m_face_converter;
@@ -92,7 +93,7 @@ public:
         //m_point_converter = shared_ptr<PointConverter>( new PointConverter( m_unit_converter ) );
         //m_spline_converter = shared_ptr<SplineConverter>( new SplineConverter( m_geom_settings, m_point_converter ) );
         //m_sweeper = shared_ptr<Sweeper>( new Sweeper( m_geom_settings, m_unit_converter ) );
-        //m_placement_converter = shared_ptr<PlacementConverter>( new PlacementConverter( m_unit_converter ) );
+        m_placement_converter = shared_ptr<PlacementConverter>( new PlacementConverter( {}/*m_unit_converter*/ ) );
         //m_curve_converter = shared_ptr<CurveConverter>( new CurveConverter( m_geom_settings, m_placement_converter, m_point_converter, m_spline_converter ) );
         //m_profile_cache = shared_ptr<ProfileCache>( new ProfileCache( m_curve_converter, m_spline_converter ) );
         //m_face_converter = shared_ptr<FaceConverter>( new FaceConverter( m_geom_settings, m_unit_converter, m_curve_converter, m_spline_converter, m_sweeper ) );
@@ -105,7 +106,7 @@ public:
         //m_point_converter->setMessageTarget( this );
         //m_spline_converter->setMessageTarget( this );
         //m_sweeper->setMessageTarget( this );
-        //m_placement_converter->setMessageTarget( this );
+        m_placement_converter->setMessageTarget( this );
         //m_curve_converter->setMessageTarget( this );
         //m_profile_cache->setMessageTarget( this );
         //m_face_converter->setMessageTarget( this );
@@ -262,8 +263,8 @@ public:
                 shared_ptr<TransformData> map_matrix_target;
                 if( mapped_item->m_MappingTarget )
                 {
-                    //shared_ptr<IfcCartesianTransformationOperator> transform_operator = mapped_item->m_MappingTarget;
-                    //m_placement_converter->convertTransformationOperator( transform_operator, map_matrix_target );
+                    shared_ptr<IfcCartesianTransformationOperator> transform_operator = mapped_item->m_MappingTarget;
+                    m_placement_converter->convertTransformationOperator( transform_operator, map_matrix_target );
                 }
 
                 shared_ptr<TransformData> map_matrix_origin;
@@ -273,7 +274,7 @@ public:
                     shared_ptr<IfcPlacement> mapping_origin_placement = dynamic_pointer_cast<IfcPlacement>( mapping_origin_select );
                     if( mapping_origin_placement )
                     {
-                        //m_placement_converter->convertIfcPlacement( mapping_origin_placement, map_matrix_origin );
+                        m_placement_converter->convertIfcPlacement( mapping_origin_placement, map_matrix_origin );
                     }
                     else
                     {
@@ -332,8 +333,8 @@ public:
 
                 if( map_matrix_origin && map_matrix_target )
                 {
-                    //carve::math::Matrix mapped_pos(map_matrix_target->m_matrix*map_matrix_origin->m_matrix);
-                    //mapped_input_data->applyTransformToRepresentation(mapped_pos);
+                    MbMatrix3D mapped_pos = map_matrix_target->m_matrix*map_matrix_origin->m_matrix;
+                    mapped_input_data->applyTransformToRepresentation(mapped_pos);
                 }
                 representation_data->appendRepresentationData( mapped_input_data, representation_data );
                 continue;
