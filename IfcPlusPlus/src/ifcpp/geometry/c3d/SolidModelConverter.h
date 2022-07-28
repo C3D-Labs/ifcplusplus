@@ -100,7 +100,7 @@ public:
     }
 
     // ENTITY IfcSolidModel ABSTRACT SUPERTYPE OF(ONEOF(IfcCsgSolid, IfcManifoldSolidBrep, IfcSweptAreaSolid, IfcSweptDiskSolid))
-    void convertIfcSolidModel( const shared_ptr<IfcSolidModel>& solid_model, shared_ptr<ItemShapeData> item_data )
+    SPtr<MbItem> convertIfcSolidModel( const shared_ptr<IfcSolidModel>& solid_model, shared_ptr<ItemShapeData> item_data )
     {
         //const double length_in_meter = m_curve_converter->getPointConverter()->getUnitConverter()->getLengthInMeterFactor();
 
@@ -120,7 +120,7 @@ public:
             if( !swept_area )
             {
                 messageCallback( "SweptArea not valid", StatusCallback::MESSAGE_TYPE_ERROR, __FUNC__, swept_area_solid.get() );
-                return;
+                return {};
             }
             
             shared_ptr<ItemShapeData> item_data_solid( new ItemShapeData() );
@@ -145,7 +145,7 @@ public:
                 item_data->addItemData( item_data_solid );
                 item_data->applyTransformToItem( swept_area_pos );
                 */
-                return;
+                return {};
             }
 
             //shared_ptr<ProfileConverter> profile_converter = m_profile_cache->getProfileConverter( swept_area );
@@ -174,7 +174,7 @@ public:
                 item_data->addItemData( item_data_solid );
                 item_data->applyTransformToItem( swept_area_pos );
                 */
-                return;
+                return {};
             }
 
             shared_ptr<IfcRevolvedAreaSolid> revolved_area_solid = dynamic_pointer_cast<IfcRevolvedAreaSolid>( swept_area_solid );
@@ -183,7 +183,7 @@ public:
                 //convertIfcRevolvedAreaSolid( revolved_area_solid, item_data_solid );
                 //item_data->addItemData( item_data_solid );
                 //item_data->applyTransformToItem( swept_area_pos );
-                return;
+                return {};
             }
 
             shared_ptr<IfcSurfaceCurveSweptAreaSolid> surface_curve_swept_area_solid = dynamic_pointer_cast<IfcSurfaceCurveSweptAreaSolid>( swept_area_solid );
@@ -220,7 +220,7 @@ public:
                 item_data->addItemData( item_data_solid );
                 item_data->applyTransformToItem( swept_area_pos );
                 */
-                return;
+                return {};
             }
 
             messageCallback( "Unhandled IFC Representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, solid_model.get() );
@@ -247,8 +247,7 @@ public:
             if( faceted_brep )
             {
                 //std::cout << "IfcFacetedBrep" << std::endl;
-                convertIfcFacetedBrep(faceted_brep, item_data);
-                return;
+                return convertIfcFacetedBrep(faceted_brep, item_data);
             }
 
             shared_ptr<IfcAdvancedBrep> advanced_brep = dynamic_pointer_cast<IfcAdvancedBrep>( manifold_solid_brep );
@@ -265,7 +264,7 @@ public:
                     std::cout << "IfcAdvancedBrep not implemented" << std::endl;
 #endif
                 }
-                return;
+                return {};
             }
 
             messageCallback( "Unhandled IFC Representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, solid_model.get() );
@@ -289,7 +288,7 @@ public:
                     //convertIfcCsgPrimitive3D( csg_select_primitive_3d, item_data );
                 }
             }
-            return;
+            return {};
         }
 
         //shared_ptr<IfcReferencedSectionedSpine> spine = dynamic_pointer_cast<IfcReferencedSectionedSpine>(solid_model);
@@ -360,17 +359,18 @@ public:
             m_sweeper->sweepDisk( basis_curve_points, swept_disp_solid.get(), item_data_solid, nvc_disk, radius, radius_inner );
             item_data->addItemData( item_data_solid );
             */
-            return;
+            return {};
         }
 
         messageCallback( "Unhandled IFC Representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, solid_model.get() );
+        return {};
     }
 
-    void convertIfcFacetedBrep( const shared_ptr<IfcFacetedBrep>& asFacetedBrep, shared_ptr<ItemShapeData> item_data )
+    SPtr<MbItem> convertIfcFacetedBrep( const shared_ptr<IfcFacetedBrep>& asFacetedBrep, shared_ptr<ItemShapeData> item_data )
     {
+        SPtr<MbMesh> pMesh;
         if ( asFacetedBrep && asFacetedBrep->m_Outer )
-        {
-            SPtr<MbMesh> pMesh;
+        { 
             for( auto curFace: asFacetedBrep->m_Outer->m_CfsFaces )
             {
                 if ( !curFace )
@@ -405,6 +405,8 @@ public:
             if(pMesh)
                 item_data->m_pMathItem = pMesh;
         }
+
+        return pMesh;
     }
 
     /*

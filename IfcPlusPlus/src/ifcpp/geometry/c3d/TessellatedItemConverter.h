@@ -55,7 +55,7 @@ public:
         //:m_unit_converter(unit_converter)
     { }
 
-    void convertTessellatedItem(shared_ptr<IfcTessellatedItem> const tessellated_item,
+    SPtr<MbItem> convertTessellatedItem(shared_ptr<IfcTessellatedItem> const tessellated_item,
             shared_ptr<ItemShapeData> item_data)
     {
         //Can be either an IfcPolygonalFaceSet or an IfcTriangulatedFaceSet
@@ -67,14 +67,14 @@ public:
         {
             messageCallback( "Tessellated item is not a face set! Probably a bare polygonal face?",
                     StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, tessellated_item.get());
-            return;
+            return {};
         }
         auto vertices = face_set->m_Coordinates;
         if(!vertices)
         {
             messageCallback( "Tessellated item does not contain any vertices!",
                     StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, face_set.get());
-            return;
+            return {};
         }
 
         auto const coordinate_count = face_set->m_Coordinates->m_CoordList.size();
@@ -92,6 +92,8 @@ public:
 
         if(pMesh->AllPointsCount() > 0)
             item_data->m_pMathItem = pMesh;
+
+        return pMesh;
     }
 
 protected:
@@ -121,6 +123,18 @@ protected:
             size_t coordinate_count,
             SPtr<MbMesh> pMesh)
     {
+
+        for(auto const indexed_face : poly_face_set->m_Faces)
+        {
+            auto const& coord_index = indexed_face->m_CoordIndex;
+            if(!indexed_face ||3 > coord_index.size())
+                continue;
+
+            if(auto face_with_voids = dynamic_pointer_cast<IfcIndexedPolygonalFaceWithVoids>(indexed_face))
+            {
+            }
+        }
+
         /*
         //indexing changes if PnIndex is present:
         //no PnIndex -> CoordIndex of faces is 1-based index into Coordinates

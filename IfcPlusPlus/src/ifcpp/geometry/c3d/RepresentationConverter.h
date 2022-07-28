@@ -17,6 +17,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 
 #pragma once
 
+#include <map>
 #include <unordered_set>
 #include <ifcpp/geometry/StylesConverter.h>
 //#include <ifcpp/geometry/GeometrySettings.h>
@@ -84,7 +85,8 @@ protected:
     //shared_ptr<FaceConverter>           m_face_converter;
     shared_ptr<SolidModelConverter>     m_solid_converter;
     shared_ptr<TessellatedItemConverter> m_tessel_converter;
-    
+
+    std::map<int,SPtr<MbItem>> m_mathItemsMap;
 public:
     RepresentationConverter( /*shared_ptr<GeometrySettings> geom_settings, shared_ptr<UnitConverter> unit_converter*/ )
         //: m_geom_settings( geom_settings ), m_unit_converter( unit_converter )
@@ -158,8 +160,14 @@ public:
         }
     }
 
-    void convertIfcRepresentation( const shared_ptr<IfcRepresentation>& ifc_representation, shared_ptr<RepresentationData>& representation_data )
+    SPtr<MbItem> convertIfcRepresentation( const shared_ptr<IfcRepresentation>& ifc_representation, shared_ptr<RepresentationData>& representation_data )
     {
+        SPtr<MbItem> pMathItem;
+
+        if(m_mathItemsMap.count(ifc_representation->m_entity_id)){
+            return m_mathItemsMap[ifc_representation->m_entity_id];
+        }
+
         if( ifc_representation->m_RepresentationIdentifier )
         {
             // http://www.buildingsmart-tech.org/ifc/IFC4/final/html/index.htm
@@ -410,10 +418,15 @@ public:
                 }
             }
         }
+
+        m_mathItemsMap[ifc_representation->m_entity_id] = pMathItem;
+        return pMathItem;
     }
     
-    void convertIfcGeometricRepresentationItem( const shared_ptr<IfcGeometricRepresentationItem>& geom_item, shared_ptr<ItemShapeData> item_data )
+    SPtr<MbItem> convertIfcGeometricRepresentationItem( const shared_ptr<IfcGeometricRepresentationItem>& geom_item, shared_ptr<ItemShapeData> item_data )
     {
+        SPtr<MbItem> pMathItem;
+
         //ENTITY IfcGeometricRepresentationItem
         //ABSTRACT SUPERTYPE OF(ONEOF(IfcAnnotationFillArea, IfcBooleanResult, IfcBoundingBox, IfcCartesianPointList, IfcCartesianTransformationOperator, 
         //IfcCompositeCurveSegment, IfcCsgPrimitive3D, IfcCurve, IfcDirection, IfcFaceBasedSurfaceModel, IfcFillAreaStyleHatching, IfcFillAreaStyleTiles, 
@@ -434,7 +447,7 @@ public:
             shared_ptr<IfcPositiveLengthMeasure> x_dim = bbox->m_XDim;
             shared_ptr<IfcPositiveLengthMeasure> y_dim = bbox->m_YDim;
             shared_ptr<IfcPositiveLengthMeasure> z_dim = bbox->m_ZDim;
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcFaceBasedSurfaceModel> surface_model = dynamic_pointer_cast<IfcFaceBasedSurfaceModel>( geom_item );
@@ -449,7 +462,7 @@ public:
                 //todo m_face_converter->convertIfcFaceList( vec_ifc_faces, item_data, FaceConverter::SHELL_TYPE_UNKONWN );
             }
 
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcBooleanResult> boolean_result = dynamic_pointer_cast<IfcBooleanResult>( geom_item );
@@ -457,7 +470,7 @@ public:
         {
             std::cout << "IfcBooleanResult" <<std::endl;
             //todo m_solid_converter->convertIfcBooleanResult( boolean_result, item_data );
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcSolidModel> solid_model = dynamic_pointer_cast<IfcSolidModel>( geom_item );
@@ -465,7 +478,7 @@ public:
         {
             std::cout << "IfcSolidModel" <<std::endl;
             m_solid_converter->convertIfcSolidModel( solid_model, item_data );
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcCurve> ifc_curve = dynamic_pointer_cast<IfcCurve>( geom_item );
@@ -490,7 +503,7 @@ public:
             }
             item_data->m_polylines.push_back( polyline_data );
             */
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcShellBasedSurfaceModel> shell_based_surface_model = dynamic_pointer_cast<IfcShellBasedSurfaceModel>( geom_item );
@@ -519,7 +532,7 @@ public:
                 }
             }
 
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcSurface> ifc_surface = dynamic_pointer_cast<IfcSurface>( geom_item );
@@ -528,7 +541,7 @@ public:
             std::cout << "IfcSurface" << std::endl;
             //shared_ptr<SurfaceProxy> surface_proxy;
             //todo m_face_converter->convertIfcSurface( ifc_surface, item_data, surface_proxy );
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcPolyline> poly_line = dynamic_pointer_cast<IfcPolyline>( geom_item );
@@ -554,7 +567,7 @@ public:
             }
             item_data->m_polylines.push_back( polyline_data );
             */
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcGeometricSet> geometric_set = dynamic_pointer_cast<IfcGeometricSet>( geom_item );
@@ -614,16 +627,16 @@ public:
             if( geometric_curve_set )
             {
                 // no additional attributes
-                return;
+                return pMathItem;
             }
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcSectionedSpine> sectioned_spine = dynamic_pointer_cast<IfcSectionedSpine>( geom_item );
         if( sectioned_spine )
         {
             //m_solid_converter->convertIfcSectionedSpine( sectioned_spine, item_data );
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcTextLiteral> text_literal = dynamic_pointer_cast<IfcTextLiteral>( geom_item );
@@ -671,7 +684,7 @@ public:
 
                 item_data->m_vec_text_literals.push_back( text_item_data );
             }*/
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcAnnotationFillArea> annotation_fill_area = dynamic_pointer_cast<IfcAnnotationFillArea>( geom_item );
@@ -704,7 +717,7 @@ public:
             m_sweeper->createTriangulated3DFace( face_loops, outer_boundary.get(), poly_cache );
             item_data->addOpenPolyhedron( poly_cache.m_poly_data );
             */
-            return;
+            return pMathItem;
         }
 
         shared_ptr<IfcPoint> ifc_point = dynamic_pointer_cast<IfcPoint>( geom_item );
@@ -722,7 +735,7 @@ public:
                     item_data->addPoint( point );
                 }
                 */
-                return;
+                return pMathItem;
             }
         }
 
@@ -731,10 +744,11 @@ public:
         {
             //std::cout << "IfcTessellatedItem" << std::endl;
             m_tessel_converter->convertTessellatedItem(ifc_tessel_item, item_data);
-            return;
+            return pMathItem;
         }
 
         messageCallback( "Unhandled IFC Representation", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, geom_item.get() );
+        return pMathItem;
     }
     
     /*
