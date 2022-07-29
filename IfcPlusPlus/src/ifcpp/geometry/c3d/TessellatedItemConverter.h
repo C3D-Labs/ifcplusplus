@@ -22,6 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+#include <iostream>
 #include <ifcpp/IFC4/include/IfcBoolean.h>
 #include <ifcpp/IFC4/include/IfcCartesianPointList3D.h>
 #include <ifcpp/IFC4/include/IfcIndexedPolygonalFace.h>
@@ -36,8 +37,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "GeometryInputData.h"
 #include <mesh.h>
 #include <mesh_grid.h>
-
-#include <iostream>
+#include <conv_topo_mesh.h>
 
 ///@brief imports tessellated meshes as carve meshes
 //Open tasks & TODOS:
@@ -78,14 +78,13 @@ public:
         }
 
         auto const coordinate_count = face_set->m_Coordinates->m_CoordList.size();
-        SPtr<MbMesh> pMesh(new MbMesh);
+        SPtr<MbMesh> pMesh(new MbMesh(true));
 
         if(auto const poly_face_set = dynamic_pointer_cast<IfcPolygonalFaceSet>(tessellated_item))
         {
             convertPolygonalFaceSet( poly_face_set, coordinate_count, pMesh);
-        }
-        
-        if(auto const tri_face_set = dynamic_pointer_cast<IfcTriangulatedFaceSet>(tessellated_item))
+        } 
+        else if(auto const tri_face_set = dynamic_pointer_cast<IfcTriangulatedFaceSet>(tessellated_item))
         {
             convertTriangulatedFaceSet( tri_face_set, coordinate_count, pMesh );
         }
@@ -119,10 +118,56 @@ protected:
         return true;
     }
 
+    bool copyVertices(shared_ptr<IfcCartesianPointList3D> const point_list,
+            std::vector<MbCartPoint3D>& points)
+    {
+        double length_factor = 1.0f; //todo m_unit_converter->getLengthInMeterFactor();
+        for(auto const& coord : point_list->m_CoordList)
+        {
+            if(coord.size() != 3)
+            {
+                messageCallback( "Coordinates with other dimension than 3 found, skipping entity.",
+                        StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, point_list.get());
+                return false;
+            }
+            MbCartPoint3D point;
+            point.x = coord[0]->m_value * length_factor;
+            point.y = coord[1]->m_value * length_factor;
+            point.z = coord[2]->m_value * length_factor;
+            points.push_back(point);
+        }
+        return true;
+    }
+
     void convertPolygonalFaceSet(shared_ptr<IfcPolygonalFaceSet> poly_face_set,
             size_t coordinate_count,
             SPtr<MbMesh> pMesh)
     {
+        std::vector<MbCartPoint3D> vertices;
+        if(!copyVertices(poly_face_set->m_Coordinates, vertices))
+            return;
+
+        std::vector<MbCartPoint3D> points;
+        size_t const pn_index_count = poly_face_set->m_PnIndex.size();
+
+        auto check_and_add = [&points, &vertices, &coordinate_count](const shared_ptr<IfcPositiveInteger>& index)
+        {
+            if(!index)
+                return true;
+            if(1 > index->m_value || coordinate_count < index->m_value)
+                return true;
+            points.push_back(vertices[index->m_value - 1]);
+            return false;
+        };
+
+        auto check_and_add_indirect = [&](const shared_ptr<IfcPositiveInteger>& pn_index)
+        {
+            if(!pn_index)
+                return true;
+            if(1 > pn_index->m_value || pn_index_count < pn_index->m_value)
+                return true;
+            return check_and_add(poly_face_set->m_PnIndex[pn_index->m_value - 1]);
+        };
 
         for(auto const indexed_face : poly_face_set->m_Faces)
         {
@@ -130,9 +175,31 @@ protected:
             if(!indexed_face ||3 > coord_index.size())
                 continue;
 
+            std::vector<std::vector<MbCartPoint3D>> polygons;
+            if((pn_index_count)
+                ? std::any_of(coord_index.cbegin(), coord_index.cend(), check_and_add_indirect)
+                : std::any_of(coord_index.cbegin(), coord_index.cend(), check_and_add))
+                continue;
+
+            polygons.push_back(std::move(points));
+
             if(auto face_with_voids = dynamic_pointer_cast<IfcIndexedPolygonalFaceWithVoids>(indexed_face))
             {
+                for(auto const& hole : face_with_voids->m_InnerCoordIndices)
+                {
+                    if((pn_index_count)
+                        ? std::any_of(hole.cbegin(), hole.cend(), check_and_add_indirect)
+                        : std::any_of(hole.cbegin(), hole.cend(), check_and_add))
+                        continue;
+
+                    polygons.push_back(std::move(points));
+                }
             }
+            auto c3dGrid = SPtr<MbGrid>( CreateGridByPolyonPoints( polygons ) );
+            //computePolygonNormal(c3dGrid);
+
+            if ( c3dGrid )
+                pMesh->AddGrid( *c3dGrid );            
         }
 
         /*
