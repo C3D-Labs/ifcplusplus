@@ -622,6 +622,8 @@ public:
         {
             return;
         }
+
+        std::vector<SPtr<MbItem>> mathItems;
         
         // evaluate IFC geometry
         shared_ptr<IfcProductRepresentation>& product_representation = ifc_product->m_Representation;
@@ -633,36 +635,43 @@ public:
             {
                 continue;
             }
-
             try
             {
                 shared_ptr<RepresentationData> representation_data( new RepresentationData() );
-                m_representation_converter->convertIfcRepresentation( representation, representation_data );
+                auto item = m_representation_converter->convertIfcRepresentation( representation, representation_data );
+                if(item)
+                    mathItems.push_back(item);
+
                 product_shape->m_vec_representations.push_back( representation_data );
                 representation_data->m_parent_product = product_shape;
             }
-            //catch( OutOfMemoryException& e )
-            //{
-            //    throw e;
-            //}
-            //catch( BuildingException& e )
-            //{
-            //    messageCallback( e.what(), StatusCallback::MESSAGE_TYPE_ERROR, "" );
-            //}
+            catch( OutOfMemoryException& e )
+            {
+                throw e;
+            }
+            catch( BuildingException& e )
+            {
+                messageCallback( e.what(), StatusCallback::MESSAGE_TYPE_ERROR, "" );
+            }
             catch( std::exception& e )
             {
                 messageCallback( e.what(), StatusCallback::MESSAGE_TYPE_ERROR, "" );
             }
         }
 
-        // IfcProduct has an ObjectPlacement that can be local or global
-        product_shape->m_object_placement = ifc_product->m_ObjectPlacement;
-        if( ifc_product->m_ObjectPlacement )
-        {
-            // IfcPlacement2Matrix follows related placements in case of local coordinate systems
-            std::unordered_set<IfcObjectPlacement*> placement_already_applied;
-            //todo m_representation_converter->getPlacementConverter()->convertIfcObjectPlacement( ifc_product->m_ObjectPlacement, product_shape, placement_already_applied, false );
+        if( !mathItems.empty() ){
+            if(mathItems.size() == 1){
+                product_shape->m_pMathItem = mathItems[0];
+            } else {
+                SPtr<MbAssembly> pAsm(new MbAssembly());
+                for(auto&& pItem : mathItems)
+                    pAsm->AddItem(*pItem);
+
+                product_shape->m_pMathItem = pAsm;
+                product_shape->m_math_uuid = createGUID32();
+            }
         }
+
 
         std::vector<shared_ptr<ProductShapeData> > vec_opening_data;
         const shared_ptr<IfcElement> ifc_element = dynamic_pointer_cast<IfcElement>(ifc_product);

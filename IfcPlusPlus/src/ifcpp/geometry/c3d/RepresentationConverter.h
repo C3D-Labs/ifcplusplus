@@ -120,6 +120,14 @@ public:
     {
         clearCache();
     }
+
+    SPtr<MbItem> GetMathItem(shared_ptr<IfcRepresentation> rep) const 
+    {
+        if(rep && m_mathItemsMap.count(rep->m_entity_id)){
+            return m_mathItemsMap.at(rep->m_entity_id);
+        }
+        return {};
+    }
     
     void clearCache()
     {
@@ -215,6 +223,7 @@ public:
         representation_data->m_ifc_representation = ifc_representation;
         representation_data->m_ifc_representation_context = ifc_representation->m_ContextOfItems;
 
+        std::vector<SPtr<MbItem>> mathItems;
         //const double length_factor = m_unit_converter->getLengthInMeterFactor();
         for( size_t i_representation_items = 0; i_representation_items < ifc_representation->m_Items.size(); ++i_representation_items )
         {
@@ -235,7 +244,10 @@ public:
 
                 try
                 {
-                    convertIfcGeometricRepresentationItem( geom_item, geom_item_data );
+                    auto item = convertIfcGeometricRepresentationItem( geom_item, geom_item_data );
+                    if(item){
+                        mathItems.push_back(item);
+                    }
                 }
                 catch( OutOfMemoryException& e )
                 {
@@ -296,10 +308,10 @@ public:
                 {
                     throw OutOfMemoryException( __FUNC__ );
                 }
-
+                SPtr<MbItem> pItem;
                 try
                 {
-                    convertIfcRepresentation( mapped_representation, mapped_input_data );
+                    pItem = convertIfcRepresentation( mapped_representation, mapped_input_data );
                 }
                 catch( OutOfMemoryException& e )
                 {
@@ -338,6 +350,19 @@ public:
                         }
                     }
                 }*/
+
+                if(pItem){
+                    MbPlacement3D placement;
+                    if( map_matrix_origin && map_matrix_target )
+                    {
+                        MbMatrix3D mapped_pos = map_matrix_target->m_matrix*map_matrix_origin->m_matrix;
+
+                        placement.Init(mapped_pos);
+                        pItem = SPtr<MbItem>(new MbInstance(*pItem, placement));
+                    }
+
+                    mathItems.push_back(pItem);
+                }
 
                 if( map_matrix_origin && map_matrix_target )
                 {
@@ -416,6 +441,18 @@ public:
                         }
                     }
                 }
+            }
+        }
+
+        if( !mathItems.empty() ){
+            if(mathItems.size() == 1){
+                pMathItem = mathItems[0];
+            } else {
+                SPtr<MbAssembly> pAsm(new MbAssembly());
+                for(auto&& pItem : mathItems)
+                    pAsm->AddItem(*pItem);
+
+                pMathItem = pAsm;
             }
         }
 
@@ -743,7 +780,7 @@ public:
         if(ifc_tessel_item)
         {
             //std::cout << "IfcTessellatedItem" << std::endl;
-            m_tessel_converter->convertTessellatedItem(ifc_tessel_item, item_data);
+            pMathItem = m_tessel_converter->convertTessellatedItem(ifc_tessel_item, item_data);
             return pMathItem;
         }
 

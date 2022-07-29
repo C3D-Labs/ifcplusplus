@@ -546,8 +546,10 @@ public:
 class ProductShapeData 
 {
 public:
-    std::wstring m_entity_guid;
     std::string  m_math_uuid;
+    SPtr<MbItem> m_pMathItem;
+public:
+    std::wstring m_entity_guid;
     weak_ptr<IfcObjectDefinition>                       m_ifc_object_definition;
     weak_ptr<IfcObjectPlacement>                        m_object_placement;
     std::vector<shared_ptr<RepresentationData> >        m_vec_representations;
@@ -556,6 +558,8 @@ public:
     std::vector<shared_ptr<TransformData> >             m_vec_transforms;
     std::vector<shared_ptr<ProductShapeData> >          m_vec_children;
     std::vector<shared_ptr<AppearanceData>>            m_vec_product_appearances;
+
+
 
     ProductShapeData() {}
     ProductShapeData( std::wstring entity_guid ) : m_entity_guid(entity_guid) { }
