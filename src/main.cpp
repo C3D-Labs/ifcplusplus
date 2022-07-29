@@ -162,8 +162,8 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
         {
             if( auto&& shape = geoms(ifc_product->m_GlobalId->toString()) )
             {
-                if( auto pMathItem = shape->toMathItem()){
-                    math_children.push_back(pMathItem);
+                if( shape->m_pMathItem){
+                    math_children.push_back(shape->m_pMathItem);
                     // assign the 3d geometry to the node
                     item.rep_uuid = shape->m_math_uuid;
                     // generate UUID for the node, to using the item in Web visualization
@@ -171,7 +171,7 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
                 }
             }
 
-            GeomUtils::GetC3dPlacement3D(dynamic_pointer_cast<IfcLocalPlacement>( ifc_product->m_ObjectPlacement), placement);
+            GeomUtils::GetC3dPlacement3D(dynamic_pointer_cast<IfcLocalPlacement>(ifc_product->m_ObjectPlacement), placement);
         }
 
         if( !math_children.empty() )
@@ -315,7 +315,7 @@ int main(int ac, char *av[])
         std::cout << "Sending geometry to service" << std::endl;
         std::shared_ptr<model::CacheGeometry_request> request(new model::CacheGeometry_request());
 
-        const bool sendToService = true;
+        const bool sendToService = false;
         const bool saveToFile = false;
         for(auto&& shapeData :ifc_geom_converter->getShapeInputData())
         {
