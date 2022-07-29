@@ -197,6 +197,28 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
         item.web_item->setAttrs(attrs);
         item.web_item->setUuid(item.item_uuid);
         item.web_item->setRepresentation(item.rep_uuid);
+
+        if(placement.IsTranslation() || placement.IsRotation()){
+            MbMatrix3D from = placement.GetMatrixFrom();
+            item.web_item->setMatrix({
+                static_cast<float>(from.GetEl()[0]),
+                static_cast<float>(from.GetEl()[1]),
+                static_cast<float>(from.GetEl()[2]),
+                static_cast<float>(from.GetEl()[3]),
+                static_cast<float>(from.GetEl()[4]),
+                static_cast<float>(from.GetEl()[5]),
+                static_cast<float>(from.GetEl()[6]),
+                static_cast<float>(from.GetEl()[7]),
+                static_cast<float>(from.GetEl()[8]),
+                static_cast<float>(from.GetEl()[9]),
+                static_cast<float>(from.GetEl()[10]),
+                static_cast<float>(from.GetEl()[11]),
+                static_cast<float>(from.GetEl()[12]),
+                static_cast<float>(from.GetEl()[13]),
+                static_cast<float>(from.GetEl()[14]),
+                static_cast<float>(from.GetEl()[15]),
+            });
+        }
     }
 
     return item;
@@ -293,7 +315,7 @@ int main(int ac, char *av[])
         std::cout << "Sending geometry to service" << std::endl;
         std::shared_ptr<model::CacheGeometry_request> request(new model::CacheGeometry_request());
 
-        const bool sendToService = false;
+        const bool sendToService = true;
         const bool saveToFile = false;
         for(auto&& shapeData :ifc_geom_converter->getShapeInputData())
         {
@@ -320,7 +342,7 @@ int main(int ac, char *av[])
                     .then([&](std::string uuidGeom){
                         geom_uuid = uuidGeom;
                         return doWhile([=]{
-                            std::this_thread::sleep_for(200ms);
+                            std::this_thread::sleep_for(20ms);
                             double progress = 0.0;
                             try{
                                 auto status = cache_api->getGeometry(geom_uuid,{}).get();
