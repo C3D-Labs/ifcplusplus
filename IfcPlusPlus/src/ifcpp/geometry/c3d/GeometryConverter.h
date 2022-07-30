@@ -659,6 +659,15 @@ public:
             }
         }
 
+        // IfcProduct has an ObjectPlacement that can be local or global
+        product_shape->m_object_placement = ifc_product->m_ObjectPlacement;
+        if( ifc_product->m_ObjectPlacement )
+        {
+            // IfcPlacement2Matrix follows related placements in case of local coordinate systems
+            std::unordered_set<IfcObjectPlacement*> placement_already_applied;
+            m_representation_converter->getPlacementConverter()->convertIfcObjectPlacement( ifc_product->m_ObjectPlacement, product_shape, placement_already_applied, false );
+        }
+
         if( !mathItems.empty() ){
             if(mathItems.size() == 1){
                 product_shape->m_pMathItem = mathItems[0];
@@ -671,6 +680,8 @@ public:
                 product_shape->m_math_uuid = createGUID32();
             }
         }
+
+
 
 
         std::vector<shared_ptr<ProductShapeData> > vec_opening_data;

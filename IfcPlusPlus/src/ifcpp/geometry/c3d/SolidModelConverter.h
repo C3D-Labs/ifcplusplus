@@ -140,12 +140,12 @@ public:
             shared_ptr<IfcExtrudedAreaSolid> extruded_area = dynamic_pointer_cast<IfcExtrudedAreaSolid>( swept_area_solid );
             if( extruded_area )
             {
-                /*
-                convertIfcExtrudedAreaSolid( extruded_area, item_data_solid );
+                std::cout << "IfcExtrudedAreaSolid" << std::endl;
+                /*        
                 item_data->addItemData( item_data_solid );
                 item_data->applyTransformToItem( swept_area_pos );
                 */
-                return {};
+                return convertIfcExtrudedAreaSolid( extruded_area, item_data_solid );;
             }
 
             //shared_ptr<ProfileConverter> profile_converter = m_profile_cache->getProfileConverter( swept_area );
@@ -154,6 +154,7 @@ public:
             shared_ptr<IfcFixedReferenceSweptAreaSolid> fixed_reference_swept_area_solid = dynamic_pointer_cast<IfcFixedReferenceSweptAreaSolid>( swept_area_solid );
             if( fixed_reference_swept_area_solid )
             {
+                std::cout << "IfcFixedReferenceSweptAreaSolid" << std::endl;
                 /*
                 //Directrix  : OPTIONAL IfcCurve;
                 //StartParam     : OPTIONAL IfcParameterValue;
@@ -180,6 +181,7 @@ public:
             shared_ptr<IfcRevolvedAreaSolid> revolved_area_solid = dynamic_pointer_cast<IfcRevolvedAreaSolid>( swept_area_solid );
             if( revolved_area_solid )
             {
+                std::cout << "IfcRevolvedAreaSolid" << std::endl;
                 //convertIfcRevolvedAreaSolid( revolved_area_solid, item_data_solid );
                 //item_data->addItemData( item_data_solid );
                 //item_data->applyTransformToItem( swept_area_pos );
@@ -189,6 +191,8 @@ public:
             shared_ptr<IfcSurfaceCurveSweptAreaSolid> surface_curve_swept_area_solid = dynamic_pointer_cast<IfcSurfaceCurveSweptAreaSolid>( swept_area_solid );
             if( surface_curve_swept_area_solid )
             {
+                std::cout << "IfcSurfaceCurveSweptAreaSolid" << std::endl;
+
                 /*
                 shared_ptr<IfcCurve>& ifc_directrix_curve = surface_curve_swept_area_solid->m_Directrix;
                 //shared_ptr<IfcParameterValue>& ifc_start_param = surface_curve_swept_area_solid->m_StartParam;                //optional
@@ -238,9 +242,11 @@ public:
             shared_ptr<IfcClosedShell>& outer_shell = manifold_solid_brep->m_Outer;
             if( outer_shell )
             {
+                std::cout << "IfcClosedShell" << std::endl;
                 // first convert outer shell
                 //std::vector<shared_ptr<IfcFace> >& vec_faces_outer_shell = outer_shell->m_CfsFaces;
                 //m_face_converter->convertIfcFaceList( vec_faces_outer_shell, item_data, FaceConverter::CLOSED_SHELL );
+                return {};
             }
 
             shared_ptr<IfcFacetedBrep> faceted_brep = dynamic_pointer_cast<IfcFacetedBrep>( manifold_solid_brep );
@@ -256,6 +262,8 @@ public:
                 // ENTITY IfcAdvancedBrep   SUPERTYPE OF(IfcAdvancedBrepWithVoids)
                 if( dynamic_pointer_cast<IfcAdvancedBrepWithVoids>( advanced_brep ) )
                 {
+                    std::cout << "IfcAdvancedBrepWithVoids" << std::endl;
+
                     //shared_ptr<IfcAdvancedBrepWithVoids> advanced_brep_with_voids = dynamic_pointer_cast<IfcAdvancedBrepWithVoids>( solid_model );
                     //std::vector<shared_ptr<IfcClosedShell> >& vec_voids = advanced_brep_with_voids->m_Voids;
 
@@ -279,6 +287,8 @@ public:
             if( csg_select_boolean_result )
             {
                 //convertIfcBooleanResult( csg_select_boolean_result, item_data );
+                std::cout << "IfcCsgSolid" << std::endl;
+                return {};
             }
             else
             {
@@ -286,9 +296,10 @@ public:
                 if( csg_select_primitive_3d )
                 {
                     //convertIfcCsgPrimitive3D( csg_select_primitive_3d, item_data );
+                    std::cout << "IfcCsgPrimitive3D" << std::endl;
+                    return {};
                 }
             }
-            return {};
         }
 
         //shared_ptr<IfcReferencedSectionedSpine> spine = dynamic_pointer_cast<IfcReferencedSectionedSpine>(solid_model);
@@ -359,6 +370,8 @@ public:
             m_sweeper->sweepDisk( basis_curve_points, swept_disp_solid.get(), item_data_solid, nvc_disk, radius, radius_inner );
             item_data->addItemData( item_data_solid );
             */
+
+            std::cout << "IfcSweptDiskSolid" << std::endl;
             return {};
         }
 
@@ -409,9 +422,10 @@ public:
         return pMesh;
     }
 
-    /*
-    void convertIfcExtrudedAreaSolid( const shared_ptr<IfcExtrudedAreaSolid>& extruded_area, shared_ptr<ItemShapeData> item_data )
+    
+    SPtr<MbItem> convertIfcExtrudedAreaSolid( const shared_ptr<IfcExtrudedAreaSolid>& extruded_area, shared_ptr<ItemShapeData> item_data )
     {
+        /*
         if( !extruded_area->m_ExtrudedDirection )
         {
             messageCallback( "Invalid ExtrudedDirection", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, extruded_area.get() );
@@ -457,8 +471,10 @@ public:
             return;
         }
         m_sweeper->extrude( paths, extrusion_vector, extruded_area.get(), item_data );
+        */
+       return {};
+    }
 
-    }*/
     /*
     void convertRevolvedAreaSolid( const std::vector<std::vector<vec2> >& profile_coords_unchecked, const vec3& axis_location, const vec3& axis_direction, double revolution_angle, shared_ptr<ItemShapeData> item_data, BuildingEntity* entity_of_origin = nullptr )
     {

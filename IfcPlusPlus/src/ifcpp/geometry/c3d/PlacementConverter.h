@@ -55,15 +55,14 @@ public:
 
     }
 
-    /*
     void convertIfcAxis2Placement2D( const shared_ptr<IfcAxis2Placement2D>& axis2placement2d, shared_ptr<TransformData>& resulting_matrix, bool only_rotation = false )
     {
-        const double length_factor = m_unit_converter->getLengthInMeterFactor();
-        vec3  translate( carve::geom::VECTOR( 0.0, 0.0, 0.0 ) );
-        vec3  local_x( carve::geom::VECTOR( 1.0, 0.0, 0.0 ) );
-        vec3  local_y( carve::geom::VECTOR( 0.0, 1.0, 0.0 ) );
-        vec3  local_z( carve::geom::VECTOR( 0.0, 0.0, 1.0 ) );
-        vec3  ref_direction( carve::geom::VECTOR( 1.0, 0.0, 0.0 ) );
+        const double length_factor = m_unit_converter ? m_unit_converter->getLengthInMeterFactor() : 1.0;
+        MbVector3D  translate( 0.0, 0.0, 0.0 );
+        MbVector3D  local_x( 1.0, 0.0, 0.0 );
+        MbVector3D  local_y( 0.0, 1.0, 0.0 );
+        MbVector3D  local_z( 0.0, 0.0, 1.0 );
+        MbVector3D  ref_direction( 1.0, 0.0, 0.0 );
 
         if( !only_rotation )
         {
@@ -72,7 +71,7 @@ public:
                 std::vector<shared_ptr<IfcLengthMeasure> >& coords = axis2placement2d->m_Location->m_Coordinates;
                 if( coords.size() > 1 )
                 {
-                    translate = carve::geom::VECTOR( coords[0]->m_value*length_factor, coords[1]->m_value*length_factor, 0.0 );
+                    translate = MbVector3D( coords[0]->m_value*length_factor, coords[1]->m_value*length_factor, 0.0 );
                 }
             }
         }
@@ -94,29 +93,29 @@ public:
         }
 
         local_x = ref_direction;
-        vec3  z_axis( carve::geom::VECTOR( 0.0, 0.0, 1.0 ) );
-        local_y = carve::geom::cross( z_axis, local_x );
+        MbVector3D  z_axis( 0.0, 0.0, 1.0 );
+        local_y =  z_axis|local_x;
         // ref_direction can be just in the x-z-plane, not perpendicular to y and z. so re-compute local x
-        local_x = carve::geom::cross( local_y, local_z );
+        local_x = local_y|local_z;
 
-        local_x.normalize();
-        local_y.normalize();
-        local_z.normalize();
+        local_x.Normalize();
+        local_y.Normalize();
+        local_z.Normalize();
 
         if( !resulting_matrix )
         {
             resulting_matrix = shared_ptr<TransformData>( new TransformData() );
         }
-        resulting_matrix->m_matrix = carve::math::Matrix(
-            local_x.x, local_y.x, local_z.x, translate.x,
-            local_x.y, local_y.y, local_z.y, translate.y,
-            local_x.z, local_y.z, local_z.z, translate.z,
-            0, 0, 0, 1 );
+        
+        resulting_matrix->m_matrix.SetAxisX() = local_x;
+        resulting_matrix->m_matrix.SetAxisY() = local_y;
+        resulting_matrix->m_matrix.SetAxisZ() = local_z;
+        resulting_matrix->m_matrix.SetOrigin() = translate;
+
         resulting_matrix->m_placement_entity = axis2placement2d;
         resulting_matrix->m_placement_entity_id = axis2placement2d->m_entity_id;
-    }*/
+    }
 
-    
     void convertIfcAxis2Placement3D( const shared_ptr<IfcAxis2Placement3D>& axis2placement3d, shared_ptr<TransformData>& resulting_matrix, bool only_rotation = false )
     {
         const double length_factor = m_unit_converter ? m_unit_converter->getLengthInMeterFactor() : 1.0;
@@ -318,7 +317,7 @@ public:
         else if( dynamic_pointer_cast<IfcAxis2Placement2D>( placement ) )
         {
             shared_ptr<IfcAxis2Placement2D> axis2placement2d = dynamic_pointer_cast<IfcAxis2Placement2D>( placement );
-            //convertIfcAxis2Placement2D( axis2placement2d, resulting_matrix, only_rotation );
+            convertIfcAxis2Placement2D( axis2placement2d, resulting_matrix, only_rotation );
         }
         else if( dynamic_pointer_cast<IfcAxis2Placement3D>( placement ) )
         {

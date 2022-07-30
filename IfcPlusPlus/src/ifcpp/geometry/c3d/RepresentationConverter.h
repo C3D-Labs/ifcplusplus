@@ -140,13 +140,13 @@ public:
     shared_ptr<PointConverter>&         getPointConverter() { return m_point_converter; }
     shared_ptr<SplineConverter>&        getSplineConverter() { return m_spline_converter; }
     shared_ptr<Sweeper>&                getSweeper() { return m_sweeper; }
-    shared_ptr<PlacementConverter>&     getPlacementConverter() { return m_placement_converter; }
     shared_ptr<CurveConverter>&         getCurveConverter() { return m_curve_converter; }
     shared_ptr<ProfileCache>&           getProfileCache()   { return m_profile_cache; }
     shared_ptr<FaceConverter>&          getFaceConverter() { return m_face_converter; }
     shared_ptr<SolidModelConverter>&    getSolidConverter() { return m_solid_converter; }
     */
     shared_ptr<StylesConverter>&        getStylesConverter() { return m_styles_converter; }
+    shared_ptr<PlacementConverter>&     getPlacementConverter() { return m_placement_converter; }
     
     void setUnitConverter( shared_ptr<UnitConverter>& unit_converter )
     {/*
@@ -357,19 +357,19 @@ public:
                     {
                         MbMatrix3D mapped_pos = map_matrix_target->m_matrix*map_matrix_origin->m_matrix;
 
-                        placement.Init(mapped_pos);
+                        //placement.Init(mapped_pos);
                         pItem = SPtr<MbItem>(new MbInstance(*pItem, placement));
                     }
 
                     mathItems.push_back(pItem);
                 }
 
-                if( map_matrix_origin && map_matrix_target )
-                {
-                    MbMatrix3D mapped_pos = map_matrix_target->m_matrix*map_matrix_origin->m_matrix;
-                    mapped_input_data->applyTransformToRepresentation(mapped_pos);
-                }
-                representation_data->appendRepresentationData( mapped_input_data, representation_data );
+                //if( map_matrix_origin && map_matrix_target )
+                //{
+                //    MbMatrix3D mapped_pos = map_matrix_target->m_matrix*map_matrix_origin->m_matrix;
+                //    mapped_input_data->applyTransformToRepresentation(mapped_pos);
+                //}
+                //representation_data->appendRepresentationData( mapped_input_data, representation_data );
                 continue;
             }
 
@@ -513,8 +513,7 @@ public:
         shared_ptr<IfcSolidModel> solid_model = dynamic_pointer_cast<IfcSolidModel>( geom_item );
         if( solid_model )
         {
-            std::cout << "IfcSolidModel" <<std::endl;
-            m_solid_converter->convertIfcSolidModel( solid_model, item_data );
+            pMathItem = m_solid_converter->convertIfcSolidModel( solid_model, item_data );
             return pMathItem;
         }
 
