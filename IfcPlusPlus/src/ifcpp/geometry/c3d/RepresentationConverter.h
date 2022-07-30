@@ -61,45 +61,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 //#include "IncludeCarveHeaders.h"
 #include "GeometryInputData.h"
 //#include "Sweeper.h"
-//#include "SplineConverter.h"
-//#include "PointConverter.h"
-//#include "CurveConverter.h"
+#include "SplineConverter.h"
+#include "PointConverter.h"
+#include "CurveConverter.h"
 #include "SolidModelConverter.h"
 //#include "FaceConverter.h"
-//#include "ProfileCache.h"
+#include "ProfileCache.h"
 #include "PlacementConverter.h"
 #include "TessellatedItemConverter.h"
 
 class RepresentationConverter : public StatusCallback
 {
 protected:
-    //shared_ptr<GeometrySettings>        m_geom_settings;
-    //shared_ptr<UnitConverter>           m_unit_converter;
+    shared_ptr<GeometrySettings>        m_geom_settings;
+    shared_ptr<UnitConverter>           m_unit_converter;
     shared_ptr<StylesConverter>         m_styles_converter;
-    //shared_ptr<PointConverter>          m_point_converter;
-    //shared_ptr<SplineConverter>         m_spline_converter;
+    shared_ptr<PointConverter>          m_point_converter;
+    shared_ptr<SplineConverter>         m_spline_converter;
     //shared_ptr<Sweeper>                 m_sweeper;
     shared_ptr<PlacementConverter>      m_placement_converter;
-    //shared_ptr<CurveConverter>          m_curve_converter;
-    //shared_ptr<ProfileCache>            m_profile_cache;
+    shared_ptr<CurveConverter>          m_curve_converter;
+    shared_ptr<ProfileCache>            m_profile_cache;
     //shared_ptr<FaceConverter>           m_face_converter;
     shared_ptr<SolidModelConverter>     m_solid_converter;
     shared_ptr<TessellatedItemConverter> m_tessel_converter;
 
     std::map<int,SPtr<MbItem>> m_mathItemsMap;
 public:
-    RepresentationConverter( /*shared_ptr<GeometrySettings> geom_settings, shared_ptr<UnitConverter> unit_converter*/ )
-        //: m_geom_settings( geom_settings ), m_unit_converter( unit_converter )
+    RepresentationConverter( shared_ptr<GeometrySettings> geom_settings, shared_ptr<UnitConverter> unit_converter )
+        : m_geom_settings( geom_settings ), m_unit_converter( unit_converter )
     {
         m_styles_converter = shared_ptr<StylesConverter>( new StylesConverter() );
-        //m_point_converter = shared_ptr<PointConverter>( new PointConverter( m_unit_converter ) );
-        //m_spline_converter = shared_ptr<SplineConverter>( new SplineConverter( m_geom_settings, m_point_converter ) );
+        m_point_converter = shared_ptr<PointConverter>( new PointConverter( m_unit_converter ) );
+        m_spline_converter = shared_ptr<SplineConverter>( new SplineConverter( m_geom_settings, m_point_converter ) );
         //m_sweeper = shared_ptr<Sweeper>( new Sweeper( m_geom_settings, m_unit_converter ) );
         m_placement_converter = shared_ptr<PlacementConverter>( new PlacementConverter( {}/*m_unit_converter*/ ) );
-        //m_curve_converter = shared_ptr<CurveConverter>( new CurveConverter( m_geom_settings, m_placement_converter, m_point_converter, m_spline_converter ) );
-        //m_profile_cache = shared_ptr<ProfileCache>( new ProfileCache( m_curve_converter, m_spline_converter ) );
+        m_curve_converter = shared_ptr<CurveConverter>( new CurveConverter( m_geom_settings, m_placement_converter, m_point_converter, m_spline_converter ) );
+        m_profile_cache = shared_ptr<ProfileCache>( new ProfileCache( m_curve_converter, m_spline_converter ) );
         //m_face_converter = shared_ptr<FaceConverter>( new FaceConverter( m_geom_settings, m_unit_converter, m_curve_converter, m_spline_converter, m_sweeper ) );
-        m_solid_converter = shared_ptr<SolidModelConverter>( new SolidModelConverter( /*m_geom_settings, m_point_converter, m_curve_converter, m_face_converter, m_profile_cache, m_sweeper*/ ) );
+        m_solid_converter = shared_ptr<SolidModelConverter>( new SolidModelConverter( m_geom_settings, m_point_converter, m_curve_converter, /*m_face_converter,*/ m_profile_cache/*, m_sweeper*/ ) );
         m_tessel_converter = shared_ptr<TessellatedItemConverter>( new TessellatedItemConverter( /*m_unit_converter*/ ) );
         
 

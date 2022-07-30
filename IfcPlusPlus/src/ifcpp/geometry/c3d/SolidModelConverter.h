@@ -41,6 +41,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <ifcpp/IFC4/include/IfcManifoldSolidBrep.h>
 #include <ifcpp/IFC4/include/IfcPolygonalBoundedHalfSpace.h>
 #include <ifcpp/IFC4/include/IfcPolyLoop.h>
+#include <ifcpp/IFC4/include/IfcPositiveLengthMeasure.h>
 #include <ifcpp/IFC4/include/IfcRectangularPyramid.h>
 #include <ifcpp/IFC4/include/IfcRevolvedAreaSolid.h>
 #include <ifcpp/IFC4/include/IfcRightCircularCone.h>
@@ -55,7 +56,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include "GeometryInputData.h"
 #include "GeomUtils.h"
 //#include "PointConverter.h"
-//#include "ProfileCache.h"
+#include "ProfileCache.h"
 //#include "FaceConverter.h"
 //#include "CurveConverter.h"
 //#include "Sweeper.h"
@@ -82,16 +83,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 class SolidModelConverter : public StatusCallback
 {
 public:
-    //shared_ptr<GeometrySettings>        m_geom_settings;
-    //shared_ptr<PointConverter>          m_point_converter;
-    //shared_ptr<CurveConverter>          m_curve_converter;
+    shared_ptr<GeometrySettings>        m_geom_settings;
+    shared_ptr<PointConverter>          m_point_converter;
+    shared_ptr<CurveConverter>          m_curve_converter;
     //shared_ptr<FaceConverter>           m_face_converter;
-    //shared_ptr<ProfileCache>            m_profile_cache;
+    shared_ptr<ProfileCache>            m_profile_cache;
     //shared_ptr<Sweeper>                 m_sweeper;
 
-    SolidModelConverter( /*shared_ptr<GeometrySettings>& gs, shared_ptr<PointConverter>&  pc, shared_ptr<CurveConverter>& cc, 
-        shared_ptr<FaceConverter>& fc, shared_ptr<ProfileCache>& pcache, shared_ptr<Sweeper>& sw*/ )
-        //: m_geom_settings( gs ), m_point_converter( pc ), m_curve_converter( cc ), m_face_converter( fc ), m_profile_cache( pcache ), m_sweeper( sw )
+    SolidModelConverter( shared_ptr<GeometrySettings>& gs, shared_ptr<PointConverter>&  pc, shared_ptr<CurveConverter>& cc, 
+        /*shared_ptr<FaceConverter>& fc,*/ shared_ptr<ProfileCache>& pcache/*, shared_ptr<Sweeper>& sw*/)
+        : m_geom_settings( gs ), m_point_converter( pc ), m_curve_converter( cc ), /*m_face_converter( fc ),*/ m_profile_cache( pcache )/*, m_sweeper( sw )*/
     {
     }
 
@@ -140,7 +141,7 @@ public:
             shared_ptr<IfcExtrudedAreaSolid> extruded_area = dynamic_pointer_cast<IfcExtrudedAreaSolid>( swept_area_solid );
             if( extruded_area )
             {
-                std::cout << "IfcExtrudedAreaSolid" << std::endl;
+                //std::cout << "IfcExtrudedAreaSolid" << std::endl;
                 /*        
                 item_data->addItemData( item_data_solid );
                 item_data->applyTransformToItem( swept_area_pos );
@@ -425,33 +426,33 @@ public:
     
     SPtr<MbItem> convertIfcExtrudedAreaSolid( const shared_ptr<IfcExtrudedAreaSolid>& extruded_area, shared_ptr<ItemShapeData> item_data )
     {
-        /*
+        
         if( !extruded_area->m_ExtrudedDirection )
         {
             messageCallback( "Invalid ExtrudedDirection", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, extruded_area.get() );
-            return;
+            return {};
         }
 
         if( !extruded_area->m_Depth )
         {
             messageCallback( "Invalid Depth", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, extruded_area.get() );
-            return;
+            return {};
         }
-        double length_factor = m_point_converter->getUnitConverter()->getLengthInMeterFactor();
+        double length_factor = 1.0f;//m_point_converter->getUnitConverter()->getLengthInMeterFactor();
 
         // direction and length of extrusion
         const double depth = extruded_area->m_Depth->m_value*length_factor;
-        vec3  extrusion_vector;
+        MbVector3D  extrusion_vector;
         std::vector<shared_ptr<IfcReal> >& vec_direction = extruded_area->m_ExtrudedDirection->m_DirectionRatios;
         if( GeomUtils::allPointersValid( vec_direction ) )
         {
             if( vec_direction.size() > 2 )
             {
-                extrusion_vector = carve::geom::VECTOR( vec_direction[0]->m_value * depth, vec_direction[1]->m_value * depth, vec_direction[2]->m_value * depth );
+                extrusion_vector = MbVector3D( vec_direction[0]->m_value * depth, vec_direction[1]->m_value * depth, vec_direction[2]->m_value * depth );
             }
             else if( vec_direction.size() > 1 )
             {
-                extrusion_vector = carve::geom::VECTOR( vec_direction[0]->m_value * depth, vec_direction[1]->m_value * depth, 0 );
+                extrusion_vector = MbVector3D( vec_direction[0]->m_value * depth, vec_direction[1]->m_value * depth, 0 );
             }
         }
 
@@ -460,18 +461,24 @@ public:
         if( !swept_area )
         {
             messageCallback( "Invalid SweptArea", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, extruded_area.get() );
-            return;
+            return {};
         }
+
+        
         shared_ptr<ProfileConverter> profile_converter = m_profile_cache->getProfileConverter( swept_area );
         profile_converter->simplifyPaths();
         const std::vector<std::vector<vec2> >& paths = profile_converter->getCoordinates();
 
+        
+
+        /*
         if( paths.size() == 0 )
         {
             return;
         }
         m_sweeper->extrude( paths, extrusion_vector, extruded_area.get(), item_data );
         */
+
        return {};
     }
 

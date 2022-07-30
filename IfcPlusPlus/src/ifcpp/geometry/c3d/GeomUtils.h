@@ -41,7 +41,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <mb_placement3d.h>
 
 
-using vec2 = MbCartPoint;
+using vec2 = MbVector;
 using vec3 = MbVector3D;
 
 namespace GeomUtils
@@ -218,6 +218,7 @@ namespace GeomUtils
         }
         return true;
     }
+    */
     inline void appendPointsToCurve( const std::vector<vec2>& points_vec, std::vector<vec3>& target_vec )
     {
         bool omit_first = false;
@@ -240,7 +241,7 @@ namespace GeomUtils
             for( size_t i = 1; i < points_vec.size(); ++i )
             {
                 const vec2& pt = points_vec[i];
-                target_vec.push_back( carve::geom::VECTOR( pt.x, pt.y, 0 ) );
+                target_vec.push_back( vec3( pt.x, pt.y, 0 ) );
             }
         }
         else
@@ -249,11 +250,12 @@ namespace GeomUtils
             for( size_t i = 0; i < points_vec.size(); ++i )
             {
                 const vec2& pt = points_vec[i];
-                target_vec.push_back( carve::geom::VECTOR( pt.x, pt.y, 0 ) );
+                target_vec.push_back( vec3( pt.x, pt.y, 0 ) );
             }
         }
         // TODO: handle all segments separately: std::vector<std::vector<vec3> >& target_vec
     }
+
     inline void appendPointsToCurve( const std::vector<vec3>& points_vec_src, std::vector<vec3>& target_vec )
     {
         if (points_vec_src.size() == 0)
@@ -271,13 +273,13 @@ namespace GeomUtils
             vec3 first_segment_point = points_vec.front();
             vec3 last_segment_point = points_vec.back();
 
-            if( ( last_target_point - first_segment_point ).length2() < 0.000001 )
+            if( ( last_target_point - first_segment_point ).Length2() < 0.000001 )
             {
                 // segment order is as expected, nothing to do
             }
             else
             {
-                if( ( last_target_point - last_segment_point ).length2() < 0.000001 )
+                if( ( last_target_point - last_segment_point ).Length2() < 0.000001 )
                 {
                     // current segment seems to be in wrong order
                     std::reverse( points_vec.begin(), points_vec.end() );
@@ -285,13 +287,13 @@ namespace GeomUtils
                 else
                 {
                     // maybe the current segment fits to the beginning of the target vector
-                    if( ( first_target_point - first_segment_point ).length2() < 0.000001 )
+                    if( ( first_target_point - first_segment_point ).Length2() < 0.000001 )
                     {
                         std::reverse( target_vec.begin(), target_vec.end() );
                     }
                     else
                     {
-                        if( ( first_target_point - last_segment_point ).length2() < 0.000001 )
+                        if( ( first_target_point - last_segment_point ).Length2() < 0.000001 )
                         {
                             std::reverse( target_vec.begin(), target_vec.end() );
                             std::reverse( points_vec.begin(), points_vec.end() );
@@ -306,7 +308,7 @@ namespace GeomUtils
         {
             vec3 last_point = target_vec.back();
             vec3 first_point_current_segment = points_vec.front();
-            if( ( last_point - first_point_current_segment ).length() < 0.000001 )
+            if( ( last_point - first_point_current_segment ).Length() < 0.000001 )
             {
                 omit_first = true;
             }
@@ -322,6 +324,8 @@ namespace GeomUtils
         }
         // TODO: handle all segments separately: std::vector<std::vector<vec3> >& target_vec
     }
+
+    
     inline void addArcWithEndPoint( std::vector<vec2>& coords, double radius, double start_angle, double opening_angle, double x_center, double y_center, int num_segments )
     {
         if( num_segments < 3 )
@@ -338,10 +342,11 @@ namespace GeomUtils
         double angle_delta = opening_angle / (double)( num_segments - 1 );
         for( int i = 0; i < num_segments; ++i )
         {
-            coords.push_back( carve::geom::VECTOR( radius*cos( angle ) + x_center, radius*sin( angle ) + y_center ) );
+            coords.push_back( vec2( radius*cos( angle ) + x_center, radius*sin( angle ) + y_center ) );
             angle += angle_delta;
         }
     }
+    /*
 
     inline bool LineToLineIntersectionHelper( vec2& v1, vec2& v2, vec2& v3, vec2& v4, double & r, double & s )
     {
@@ -390,7 +395,7 @@ namespace GeomUtils
             }
         }
         return false;
-    }
+    }*/
     inline void closestPointOnLine( const vec3& point, const vec3& line_origin, const vec3& line_direction, vec3& closest )
     {
         const double denom = point.x*line_direction.x + point.y*line_direction.y + point.z*line_direction.z - line_direction.x*line_origin.x - line_direction.y*line_origin.y - line_direction.z*line_origin.z;
@@ -400,7 +405,7 @@ namespace GeomUtils
             throw BuildingException( "Line is degenerated: the line's direction vector is a null vector!", __FUNC__ );
         }
         const double lambda = denom / numer;
-        closest = carve::geom::VECTOR( line_origin.x + lambda*line_direction.x, line_origin.y + lambda*line_direction.y, line_origin.z + lambda*line_direction.z );
+        closest = vec3( line_origin.x + lambda*line_direction.x, line_origin.y + lambda*line_direction.y, line_origin.z + lambda*line_direction.z );
     }
     inline void closestPointOnLine( const vec2& point, const vec2& line_origin, const vec2& line_direction, vec2& closest )
     {
@@ -411,8 +416,9 @@ namespace GeomUtils
             throw BuildingException( "Line is degenerated: the line's direction vector is a null vector!", __FUNC__ );
         }
         const double lambda = denom / numer;
-        closest = carve::geom::VECTOR( line_origin.x + lambda*line_direction.x, line_origin.y + lambda*line_direction.y );
+        closest = vec2( line_origin.x + lambda*line_direction.x, line_origin.y + lambda*line_direction.y );
     }
+    /*
     inline double distancePoint2Line( const vec3& point, const vec3& line_p0, const vec3& line_p1 )
     {
         // d = |(point - line_p0)x(point - line_p1)| / |line_p1 - line_p0|
@@ -504,21 +510,22 @@ namespace GeomUtils
             xaxis.y, yaxis.y, zaxis.y, 0,
             xaxis.z, yaxis.z, zaxis.z, 0,
             0, 0, 0, 1 );
-    }
+    }*/
+
     inline bool bisectingPlane( const vec3& v1, const vec3& v2, const vec3& v3, vec3& normal )
     {
         bool valid = false;
         vec3 v21 = v2 - v1;
         vec3 v32 = v3 - v2;
-        double len21_square = v21.length2();
-        double len32_square = v32.length2();
+        double len21_square = v21.Length2();
+        double len32_square = v32.Length2();
 
-        if( len21_square <= carve::CARVE_EPSILON * len32_square )
+        if( len21_square <= LENGTH_EPSILON * len32_square )
         {
             if( len32_square == 0.0 )
             {
                 // all three points lie ontop of one-another
-                normal = carve::geom::VECTOR( 0.0, 0.0, 0.0 );
+                normal = vec3( 0.0, 0.0, 0.0 );
                 valid = false;
             }
             else
@@ -526,7 +533,7 @@ namespace GeomUtils
                 // return a normalized copy of v32 as bisector
                 len32_square = 1.0 / len32_square;
                 normal = v32*len32_square;
-                normal.normalize();
+                normal.Normalize();
                 valid = true;
             }
 
@@ -534,24 +541,24 @@ namespace GeomUtils
         else
         {
             valid = true;
-            if( len32_square <= carve::CARVE_EPSILON * len21_square )
+            if( len32_square <= LENGTH_EPSILON * len21_square )
             {
                 // return v21 as bisector
-                v21.normalize();
+                v21.Normalize();
                 normal = v21;
             }
             else
             {
-                v21.normalize();
-                v32.normalize();
+                v21.Normalize();
+                v32.Normalize();
 
-                double dot_product = dot( v32, v21 );
+                double dot_product = v32*v21;
                 double dot_product_abs = std::abs( dot_product );
 
-                if( dot_product_abs > ( 1.0 + carve::CARVE_EPSILON ) || dot_product_abs < ( 1.0 - carve::CARVE_EPSILON ) )
+                if( dot_product_abs > ( 1.0 + LENGTH_EPSILON ) || dot_product_abs < ( 1.0 - LENGTH_EPSILON ) )
                 {
                     normal = ( v32 + v21 )*dot_product - v32 - v21;
-                    normal.normalize();
+                    normal.Normalize();
                 }
                 else
                 {
@@ -562,28 +569,27 @@ namespace GeomUtils
         }
         return valid;
     }
+
     inline void convertPlane2Matrix( const vec3& plane_normal, const vec3& plane_position,
-        const vec3& local_z, carve::math::Matrix& resulting_matrix )
+        const vec3& local_z, MbMatrix3D& resulting_matrix )
     {
         vec3 local_normal( plane_normal );
-        local_normal.normalize();
+        local_normal.Normalize();
         vec3 local_z_new( local_z );
         //local_z_new.normalize();
 
-        vec3 local_y = cross( local_normal, local_z_new );
-        local_y.normalize();
-        local_z_new = cross( local_y, local_normal );
-        local_z_new.normalize();
+        vec3 local_y = local_normal|local_z_new;
+        local_y.Normalize();
+        local_z_new = local_y|local_normal;
+        local_z_new.Normalize();
 
-        resulting_matrix = carve::math::Matrix(
-            local_normal.x, local_y.x, local_z_new.x, plane_position.x,
-            local_normal.y, local_y.y, local_z_new.y, plane_position.y,
-            local_normal.z, local_y.z, local_z_new.z, plane_position.z,
-            0, 0, 0, 1 );
-
+        resulting_matrix.SetAxisX() = local_normal;
+        resulting_matrix.SetAxisY() = local_y;
+        resulting_matrix.SetAxisZ() = local_z_new;
+        resulting_matrix.SetOrigin() = plane_position;
     }
-    
-    / ** MeshSet and Polyhedron operations * /
+
+    /** MeshSet and Polyhedron operations * /
     inline void applyTransform( shared_ptr<carve::input::PolyhedronData>& poly_data, const carve::math::Matrix& matrix )
     {
         for( size_t ii = 0; ii < poly_data->points.size(); ++ii )
@@ -677,6 +683,7 @@ namespace GeomUtils
         }
         return true;
     }
+    */
     inline void removeDuplicates(std::vector<vec3>& loop)
     {
         if (loop.size() > 1)
@@ -711,6 +718,7 @@ namespace GeomUtils
             }
         }
     }
+
     inline void removeDuplicates( std::vector<vec2>&    loop )
     {
         if( loop.size() > 1 )
@@ -739,6 +747,7 @@ namespace GeomUtils
             }
         }
     }
+
     inline void removeDuplicates( std::vector<std::vector<vec2> >&  paths )
     {
         for( size_t ii = 0; ii < paths.size(); ++ii )
@@ -747,6 +756,8 @@ namespace GeomUtils
             removeDuplicates( loop );
         }
     }
+    
+    /*
     inline void copyClosedLoopSkipDuplicates( const std::vector<vec2>& loop_in, std::vector<vec2>& loop_out )
     {
         loop_out.clear();
@@ -845,7 +856,7 @@ namespace GeomUtils
         return all_points_inside;
     }
 
-    //\brief: finds the first occurrence of T in vector
+    *///\brief: finds the first occurrence of T in vector
     template<typename T, typename U>
     bool findFirstInVector( std::vector<shared_ptr<U> > vec, shared_ptr<T>& ptr )
     {
@@ -876,6 +887,7 @@ namespace GeomUtils
         return true;
     }
 
+    /*
     //\brief: collect connected edges and create face
     static carve::mesh::MeshSet<3>::face_t* createFaceFromEdgeLoop(carve::mesh::MeshSet<3>::edge_t* start)
     {

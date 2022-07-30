@@ -51,7 +51,7 @@ class GeometryConverter : public StatusCallback
 {
 protected:
     shared_ptr<BuildingModel>               m_ifc_model;
-    //shared_ptr<GeometrySettings>            m_geom_settings;
+    shared_ptr<GeometrySettings>            m_geom_settings;
     shared_ptr<RepresentationConverter>     m_representation_converter;
 
     std::map<std::wstring, shared_ptr<ProductShapeData> >    m_product_shape_data;
@@ -71,10 +71,10 @@ public:
     GeometryConverter( shared_ptr<BuildingModel>& ifc_model )
     {
         m_ifc_model = ifc_model;
-        //m_geom_settings = shared_ptr<GeometrySettings>( new GeometrySettings() );
+        m_geom_settings = shared_ptr<GeometrySettings>( new GeometrySettings() );
         resetNumVerticesPerCircle();
         shared_ptr<UnitConverter>& unit_converter = m_ifc_model->getUnitConverter();
-        m_representation_converter = shared_ptr<RepresentationConverter>( new RepresentationConverter( /*m_geom_settings, unit_converter*/ ) );
+        m_representation_converter = shared_ptr<RepresentationConverter>( new RepresentationConverter( m_geom_settings, unit_converter ) );
 
         // redirect all messages to this->messageTarget
         m_ifc_model->setMessageTarget( this );
