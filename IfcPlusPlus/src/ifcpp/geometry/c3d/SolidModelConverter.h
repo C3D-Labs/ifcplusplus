@@ -76,7 +76,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <mesh_primitive.h>
 #include <mesh_polygon.h>
 
+#include "cur_polyline.h"
+#include "cur_contour.h"
+
+#include "surface.h"
+#include "action_solid.h"
+
 #include <conv_topo_mesh.h>
+
 
 
 
@@ -135,7 +142,7 @@ public:
             if( swept_area_solid->m_Position )
             {
                 shared_ptr<IfcAxis2Placement3D> swept_area_position = swept_area_solid->m_Position;
-                //m_curve_converter->getPlcamentConverter()->convertIfcAxis2Placement3D( swept_area_position, swept_area_pos );
+                m_curve_converter->getPlcamentConverter()->convertIfcAxis2Placement3D( swept_area_position, swept_area_pos );
             }
 
             shared_ptr<IfcExtrudedAreaSolid> extruded_area = dynamic_pointer_cast<IfcExtrudedAreaSolid>( swept_area_solid );
@@ -146,7 +153,7 @@ public:
                 item_data->addItemData( item_data_solid );
                 item_data->applyTransformToItem( swept_area_pos );
                 */
-                return convertIfcExtrudedAreaSolid( extruded_area, item_data_solid );;
+                return convertIfcExtrudedAreaSolid( extruded_area, item_data_solid, swept_area_pos );
             }
 
             //shared_ptr<ProfileConverter> profile_converter = m_profile_cache->getProfileConverter( swept_area );
@@ -402,7 +409,7 @@ public:
                     if ( (!asPolyLoop) || asPolyLoop->m_Polygon.empty() )
                         continue;
                     std::vector<MbCartPoint3D> curC3dPolygon;
-                    GeomUtils::GetC3dPoints( asPolyLoop->m_Polygon, curC3dPolygon );
+                    GeomUtils::GetC3dPoints( asPolyLoop->m_Polygon, curC3dPolygon, m_point_converter->getUnitConverter() );
                     if ( !curC3dPolygon.empty() )
                         c3dGridSpatialPoints.push_back(curC3dPolygon);
                 
@@ -424,9 +431,9 @@ public:
     }
 
     
-    SPtr<MbItem> convertIfcExtrudedAreaSolid( const shared_ptr<IfcExtrudedAreaSolid>& extruded_area, shared_ptr<ItemShapeData> item_data )
+    SPtr<MbItem> convertIfcExtrudedAreaSolid( const shared_ptr<IfcExtrudedAreaSolid>& extruded_area, shared_ptr<ItemShapeData> item_data, shared_ptr<TransformData> transform )
     {
-        
+       
         if( !extruded_area->m_ExtrudedDirection )
         {
             messageCallback( "Invalid ExtrudedDirection", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, extruded_area.get() );
@@ -438,7 +445,7 @@ public:
             messageCallback( "Invalid Depth", StatusCallback::MESSAGE_TYPE_WARNING, __FUNC__, extruded_area.get() );
             return {};
         }
-        double length_factor = 1.0f;//m_point_converter->getUnitConverter()->getLengthInMeterFactor();
+        double length_factor = m_point_converter ? m_point_converter->getUnitConverter()->getLengthInMeterFactor() : 1.0;
 
         // direction and length of extrusion
         const double depth = extruded_area->m_Depth->m_value*length_factor;
@@ -448,11 +455,11 @@ public:
         {
             if( vec_direction.size() > 2 )
             {
-                extrusion_vector = MbVector3D( vec_direction[0]->m_value * depth, vec_direction[1]->m_value * depth, vec_direction[2]->m_value * depth );
+                extrusion_vector = MbVector3D( vec_direction[0]->m_value, vec_direction[1]->m_value, vec_direction[2]->m_value );
             }
             else if( vec_direction.size() > 1 )
             {
-                extrusion_vector = MbVector3D( vec_direction[0]->m_value * depth, vec_direction[1]->m_value * depth, 0 );
+                extrusion_vector = MbVector3D( vec_direction[0]->m_value, vec_direction[1]->m_value, 0 );
             }
         }
 
@@ -469,15 +476,56 @@ public:
         profile_converter->simplifyPaths();
         const std::vector<std::vector<vec2> >& paths = profile_converter->getCoordinates();
 
-        
-
-        /*
-        if( paths.size() == 0 )
-        {
-            return;
+        if(paths.size() == 0){
+            return {};
         }
-        m_sweeper->extrude( paths, extrusion_vector, extruded_area.get(), item_data );
-        */
+
+        /*if(paths.size() > 0)
+        {
+            SPtr<MbMesh> pMesh(new MbMesh());
+            for( auto&& path : paths)
+            {
+                auto polygon = pMesh->AddPolygon();
+                for( auto&& p : path)
+                    polygon->AddPoint(MbCartPoint3D(p.x, p.y, 0));
+            }
+
+            return pMesh;
+        }*/
+
+        
+        std::vector<MbCartPoint> points;
+        RPArray<MbContour> contours;
+        for( auto&& path : paths)
+        {
+            points.clear();
+            for( auto&& p : path)
+                points.emplace_back(p.x,p.y);
+
+            if(points.size() > 2){
+                auto polyLine = new MbPolyline(points, true/*closed*/);
+                auto pContour =  new MbContour(std::vector<MbCurve*>{polyLine}, false);
+                contours.Add(pContour);
+            }
+        }
+
+        if(contours.size() > 0){
+            MbSurface* surface = new MbPlane();
+            MbSweptData curves = MbSweptData(*surface, contours);
+            ExtrusionValues pExtParams(depth, 0.0);
+
+            MbSNameMaker* pNameMaker = new MbSNameMaker(10, MbSNameMaker::i_SideNone, 12);
+            PArray<MbSNameMaker> nameMakers;
+            nameMakers.Add(pNameMaker);
+
+            MbSolid* pResSolid = nullptr;
+            ExtrusionSolid(curves, extrusion_vector, NULL, NULL, false, pExtParams, *pNameMaker, nameMakers, pResSolid); 
+
+            if(pResSolid){
+                pResSolid->Transform(transform->m_matrix);
+            }
+            return SPtr<MbItem>(pResSolid); 
+        }
 
        return {};
     }

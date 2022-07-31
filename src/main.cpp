@@ -27,9 +27,9 @@
 
 #include "conv_exchange_settings.h"
 #include "conv_model_exchange.h"
+#include <tool_enabler.h>
 
 #include "base64.h"
-
 #include "boost/program_options.hpp"
 
 
@@ -162,16 +162,25 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
         {
             if( auto&& shape = geoms(ifc_product->m_GlobalId->toString()) )
             {
+
                 if( shape->m_pMathItem){
-                    math_children.push_back(shape->m_pMathItem);
+                    
                     // assign the 3d geometry to the node
                     item.rep_uuid = shape->m_math_uuid;
                     // generate UUID for the node, to using the item in Web visualization
                     item.item_uuid = createGUID32();
+
+                    placement.Init(shape->getTransform());
+
+                    if(placement.IsTranslation()||placement.IsRotation()){
+                        math_children.push_back(SPtr<MbInstance>(new MbInstance(*shape->m_pMathItem, placement)));
+                    } else {
+                        math_children.push_back(shape->m_pMathItem);
+                    }
                 }
             }
 
-            GeomUtils::GetC3dPlacement3D(dynamic_pointer_cast<IfcLocalPlacement>(ifc_product->m_ObjectPlacement), placement);
+            //GeomUtils::GetC3dPlacement3D(dynamic_pointer_cast<IfcLocalPlacement>(ifc_product->m_ObjectPlacement), placement);
         }
 
         if( !math_children.empty() )
@@ -179,17 +188,13 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
             if(math_children.size() == 1)
             {
                 item.math_item = math_children[0];
-                if(placement.IsTranslation()||placement.IsRotation())
-                {
-                    item.math_item = SPtr<MbInstance>(new MbInstance(*item.math_item, placement));
-                }
             } else {
                 SPtr<MbAssembly> pAssm(new MbAssembly);
 
                 for( auto&& pItem : math_children )
                     pAssm->AddItem(*pItem);
 
-                item.math_item = SPtr<MbInstance>(new MbInstance(*pAssm, placement));
+                item.math_item = SPtr<MbInstance>(new MbInstance(*pAssm, {}));
             }
         }
 
@@ -250,6 +255,8 @@ int main(int ac, char *av[])
     desc.add_options()
         ("help", "produce help message")
         ("input-file,f", po::value<std::string>(), "input file")
+        ("license-sign", po::value<std::string>(), "license signature")
+        ("license-key", po::value<std::string>(), "license key")
         ("service-url,s", po::value<std::string>(), "service-api url addres")
     ;
     po::positional_options_description p;
@@ -260,10 +267,21 @@ int main(int ac, char *av[])
 
     std::wstring input_file = L"example.ifc";
     std::string service_addr = "http://127.0.0.1:12344/v1";
+    std::string strKey = "";
+    std::string strSignature = "";
+
 
     if (vm.count("help")) {
         std::cout << desc << "\n";
         return 1;
+    }
+
+    if (vm.count("license-key")) {
+        strKey = vm["license-key"].as<std::string>();;
+    }
+
+    if (vm.count("license-sign")) {
+        strSignature = vm["license-sign"].as<std::string>();;
     }
 
     if (vm.count("input-file")){
@@ -275,6 +293,8 @@ int main(int ac, char *av[])
     if (vm.count("service-url"))
         service_addr = vm["service-url"].as<std::string>();
 
+    ::EnableMathModules(strKey.c_str(), static_cast<int>(strKey.length()), strSignature.c_str(), static_cast<int>(strSignature.length()));
+    std::cout << "IsMathModelerEnable: " << (IsMathModelerEnable()?"True":"False") << std::endl;
 
     std::shared_ptr<api::ApiClient> apiClient(new api::ApiClient);
     std::shared_ptr<api::ApiConfiguration> apiConfig(new api::ApiConfiguration);

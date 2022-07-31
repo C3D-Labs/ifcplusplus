@@ -51,8 +51,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //- check closed parameter and use it to use a different addPolyhedron method
 class TessellatedItemConverter : public StatusCallback {
 public:
-    TessellatedItemConverter(/*shared_ptr<UnitConverter> const unit_converter*/)
-        //:m_unit_converter(unit_converter)
+    TessellatedItemConverter(shared_ptr<UnitConverter> const unit_converter)
+        :m_unit_converter(unit_converter)
     { }
 
     SPtr<MbItem> convertTessellatedItem(shared_ptr<IfcTessellatedItem> const tessellated_item,
@@ -100,7 +100,7 @@ protected:
     bool copyVertices(shared_ptr<IfcCartesianPointList3D> const point_list,
             SPtr<MbGrid> pMesh)
     {
-        double length_factor = 1.0f; //todo m_unit_converter->getLengthInMeterFactor();
+        double length_factor = m_unit_converter ? m_unit_converter->getLengthInMeterFactor() : 1.0;
         for(auto const& coord : point_list->m_CoordList)
         {
             if(coord.size() != 3)
@@ -121,7 +121,7 @@ protected:
     bool copyVertices(shared_ptr<IfcCartesianPointList3D> const point_list,
             std::vector<MbCartPoint3D>& points)
     {
-        double length_factor = 1.0f; //todo m_unit_converter->getLengthInMeterFactor();
+        double length_factor = m_unit_converter ?  m_unit_converter->getLengthInMeterFactor() : 1.0;
         for(auto const& coord : point_list->m_CoordList)
         {
             if(coord.size() != 3)

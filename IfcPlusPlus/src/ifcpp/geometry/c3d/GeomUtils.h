@@ -29,6 +29,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OU
 #include <ifcpp/IFC4/include/IfcDirection.h>
 #include <ifcpp/IFC4/include/IfcLengthMeasure.h>
 #include <ifcpp/IFC4/include/IfcLocalPlacement.h>
+#include <ifcpp/model/UnitConverter.h>
 
 //#include "IncludeCarveHeaders.h"
 
@@ -756,7 +757,7 @@ namespace GeomUtils
             removeDuplicates( loop );
         }
     }
-    
+
     /*
     inline void copyClosedLoopSkipDuplicates( const std::vector<vec2>& loop_in, std::vector<vec2>& loop_out )
     {
@@ -1027,7 +1028,7 @@ namespace GeomUtils
         
     }*/
 
-    static inline  MbCartPoint3D GetC3dPoint ( const IfcCartesianPoint& ifcCartPoint ) {
+    static inline  MbCartPoint3D GetC3dPoint ( const IfcCartesianPoint& ifcCartPoint, double factor = 1.0 ) {
         return MbCartPoint3D( ifcCartPoint.m_Coordinates[0]->m_value, ifcCartPoint.m_Coordinates[1]->m_value, ifcCartPoint.m_Coordinates[2]->m_value );
     }
 
@@ -1036,12 +1037,13 @@ namespace GeomUtils
         return MbCartPoint3D( ifcCartPoint.m_DirectionRatios[0]->m_value, ifcCartPoint.m_DirectionRatios[1]->m_value, ifcCartPoint.m_DirectionRatios[2]->m_value );
     }
 
-    static inline void GetC3dPoints ( const std::vector<shared_ptr<IfcCartesianPoint> >& polygon, std::vector<MbCartPoint3D>& spatialPoints )
+    static inline void GetC3dPoints ( const std::vector<shared_ptr<IfcCartesianPoint> >& polygon, std::vector<MbCartPoint3D>& spatialPoints, shared_ptr<UnitConverter> unit_converter )
     {
+        double length_factor = unit_converter ? unit_converter->getLengthInMeterFactor() : 1.0;
         spatialPoints.reserve( polygon.size() );
         for( auto ifcCartPoint : polygon ) {
             if ( ifcCartPoint )
-            spatialPoints.push_back( GetC3dPoint(*ifcCartPoint) );
+            spatialPoints.push_back( GetC3dPoint(*ifcCartPoint, length_factor) );
         }
     }
 

@@ -95,12 +95,12 @@ public:
         m_point_converter = shared_ptr<PointConverter>( new PointConverter( m_unit_converter ) );
         m_spline_converter = shared_ptr<SplineConverter>( new SplineConverter( m_geom_settings, m_point_converter ) );
         //m_sweeper = shared_ptr<Sweeper>( new Sweeper( m_geom_settings, m_unit_converter ) );
-        m_placement_converter = shared_ptr<PlacementConverter>( new PlacementConverter( {}/*m_unit_converter*/ ) );
+        m_placement_converter = shared_ptr<PlacementConverter>( new PlacementConverter( m_unit_converter ) );
         m_curve_converter = shared_ptr<CurveConverter>( new CurveConverter( m_geom_settings, m_placement_converter, m_point_converter, m_spline_converter ) );
         m_profile_cache = shared_ptr<ProfileCache>( new ProfileCache( m_curve_converter, m_spline_converter ) );
         //m_face_converter = shared_ptr<FaceConverter>( new FaceConverter( m_geom_settings, m_unit_converter, m_curve_converter, m_spline_converter, m_sweeper ) );
         m_solid_converter = shared_ptr<SolidModelConverter>( new SolidModelConverter( m_geom_settings, m_point_converter, m_curve_converter, /*m_face_converter,*/ m_profile_cache/*, m_sweeper*/ ) );
-        m_tessel_converter = shared_ptr<TessellatedItemConverter>( new TessellatedItemConverter( /*m_unit_converter*/ ) );
+        m_tessel_converter = shared_ptr<TessellatedItemConverter>( new TessellatedItemConverter( m_unit_converter ) );
         
 
         //// this redirects the callback messages from all converters to RepresentationConverter's callback
@@ -357,8 +357,10 @@ public:
                     {
                         MbMatrix3D mapped_pos = map_matrix_target->m_matrix*map_matrix_origin->m_matrix;
 
-                        //placement.Init(mapped_pos);
-                        pItem = SPtr<MbItem>(new MbInstance(*pItem, placement));
+                        placement.Init(mapped_pos);
+                        if(placement.IsRotation() || placement.IsTranslation()){
+                            pItem = SPtr<MbItem>(new MbInstance(*pItem, placement));
+                        }
                     }
 
                     mathItems.push_back(pItem);
@@ -545,7 +547,7 @@ public:
         shared_ptr<IfcShellBasedSurfaceModel> shell_based_surface_model = dynamic_pointer_cast<IfcShellBasedSurfaceModel>( geom_item );
         if( shell_based_surface_model )
         {
-            std::cout << "IfcCurve" << std::endl;
+            std::cout << "IfcShell" << std::endl;
             std::vector<shared_ptr<IfcShell> >& vec_shells = shell_based_surface_model->m_SbsmBoundary;
             for( std::vector<shared_ptr<IfcShell> >::iterator it_shells = vec_shells.begin(); it_shells != vec_shells.end(); ++it_shells )
             {
@@ -609,7 +611,6 @@ public:
         shared_ptr<IfcGeometricSet> geometric_set = dynamic_pointer_cast<IfcGeometricSet>( geom_item );
         if( geometric_set )
         {
-            std::cout << "IfcGeometricSet" << std::endl;
             // ENTITY IfcGeometricSet SUPERTYPE OF(IfcGeometricCurveSet)
             for( auto geom_select : geometric_set->m_Elements )
             {
@@ -623,12 +624,14 @@ public:
                 if( point )
                 {
                     // TODO: implement
+                    std::cout << "IfcPoint" << std::endl;
                     continue;
                 }
 
                 shared_ptr<IfcCurve> select_curve = dynamic_pointer_cast<IfcCurve>( geom_select );
                 if( select_curve )
                 {
+                    std::cout << "IfcCurve" << std::endl;
                     /*std::vector<vec3> loops;
                     std::vector<vec3> segment_start_points;
                     m_curve_converter->convertIfcCurve( select_curve, loops, segment_start_points );
@@ -653,6 +656,7 @@ public:
                 shared_ptr<IfcSurface> select_surface = dynamic_pointer_cast<IfcSurface>( geom_select );
                 if( select_surface )
                 {
+                    std::cout << "IfcSurface" << std::endl;
                     //shared_ptr<SurfaceProxy> surface_proxy;
                     //m_face_converter->convertIfcSurface( select_surface, item_data, surface_proxy );
                     continue;

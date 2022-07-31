@@ -388,7 +388,7 @@ public:
         double length_to_meter_factor = 1.0;
         if( m_ifc_model->getUnitConverter() )
         {
-            //length_to_meter_factor = m_ifc_model->getUnitConverter()->getLengthInMeterFactor();
+            length_to_meter_factor = m_ifc_model->getUnitConverter()->getLengthInMeterFactor();
         }
         //carve::setEpsilon( m_csg_eps );
 
