@@ -250,17 +250,16 @@ public:
             shared_ptr<IfcClosedShell>& outer_shell = manifold_solid_brep->m_Outer;
             if( outer_shell )
             {
-                std::cout << "IfcClosedShell" << std::endl;
+                //std::cout << "IfcClosedShell" << std::endl;
                 // first convert outer shell
                 //std::vector<shared_ptr<IfcFace> >& vec_faces_outer_shell = outer_shell->m_CfsFaces;
                 //m_face_converter->convertIfcFaceList( vec_faces_outer_shell, item_data, FaceConverter::CLOSED_SHELL );
-                return {};
+                //return {};
             }
 
             shared_ptr<IfcFacetedBrep> faceted_brep = dynamic_pointer_cast<IfcFacetedBrep>( manifold_solid_brep );
             if( faceted_brep )
             {
-                //std::cout << "IfcFacetedBrep" << std::endl;
                 return convertIfcFacetedBrep(faceted_brep, item_data);
             }
 
@@ -399,8 +398,7 @@ public:
 
                 SPtr<MbGrid> c3dGrid;
                 std::vector<std::vector<MbCartPoint3D>> c3dGridSpatialPoints;
-                MbPlacement3D c3dGridPlacement;
-                bool placementDefined(true);
+
                 for( auto faceBound : curFace->m_Bounds )
                 {
                     if ( !faceBound )
@@ -423,10 +421,10 @@ public:
                         pMesh->AddGrid( *c3dGrid );
                 }
             }
-            if(pMesh)
+            if(pMesh){
                 item_data->m_pMathItem = pMesh;
+            }    
         }
-
         return pMesh;
     }
 

@@ -1029,7 +1029,7 @@ namespace GeomUtils
     }*/
 
     static inline  MbCartPoint3D GetC3dPoint ( const IfcCartesianPoint& ifcCartPoint, double factor = 1.0 ) {
-        return MbCartPoint3D( ifcCartPoint.m_Coordinates[0]->m_value, ifcCartPoint.m_Coordinates[1]->m_value, ifcCartPoint.m_Coordinates[2]->m_value );
+        return MbCartPoint3D( ifcCartPoint.m_Coordinates[0]->m_value*factor, ifcCartPoint.m_Coordinates[1]->m_value*factor, ifcCartPoint.m_Coordinates[2]->m_value*factor);
     }
 
 
@@ -1039,7 +1039,7 @@ namespace GeomUtils
 
     static inline void GetC3dPoints ( const std::vector<shared_ptr<IfcCartesianPoint> >& polygon, std::vector<MbCartPoint3D>& spatialPoints, shared_ptr<UnitConverter> unit_converter )
     {
-        double length_factor = unit_converter ? unit_converter->getLengthInMeterFactor() : 1.0;
+        const double length_factor = unit_converter ? unit_converter->getLengthInMeterFactor() : 1.0;
         spatialPoints.reserve( polygon.size() );
         for( auto ifcCartPoint : polygon ) {
             if ( ifcCartPoint )
