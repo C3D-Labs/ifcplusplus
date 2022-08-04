@@ -245,7 +245,13 @@ public:
                 try
                 {
                     auto item = convertIfcGeometricRepresentationItem( geom_item, geom_item_data );
-                    if(item){
+                    if(item)
+                    {
+                        auto c3d_visual = m_styles_converter->c3d_convertAppearance(geom_item_data->m_vec_item_appearances, geom_item->m_entity_id);
+                        if (c3d_visual)
+                        {
+                            item->SetSimpleAttribute(*c3d_visual);
+                        }
                         mathItems.push_back(item);
                     }
                 }
@@ -438,6 +444,7 @@ public:
                                 if( appearance_data )
                                 {
                                     representation_data->addAppearance( appearance_data );
+                                    std::cout << "Warning: IfcPresentationLayerAssignment not supported";
                                 }
                             }
                         }

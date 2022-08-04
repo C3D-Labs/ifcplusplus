@@ -71,6 +71,7 @@ class StylesConverter : public StatusCallback
 {
 protected:
     std::map<int, shared_ptr<AppearanceData> > m_map_ifc_styles;
+    std::map<int, MbUuid> m_styleId_to_MbVisual;
 
 #ifdef ENABLE_OPENMP
     Mutex m_writelock_styles_converter;
@@ -805,5 +806,59 @@ public:
             appearance_data->m_set_transparent = false;
             appearance_data->m_complete = true;
         }
+    }
+
+
+private:
+    static MbRGBA c3d_toMbRGBA(const vec4& color_vec)
+    {
+        return MbRGBA((float)color_vec.m_r, (float)color_vec.m_g, (float)color_vec.m_b);
+    }
+    static std::shared_ptr<MbVisual> c3d_toMbVisual(const AppearanceData& item_appearance)
+    {
+        auto visual = std::make_shared<MbVisual>();
+        visual->SetDiffuse(c3d_toMbRGBA(item_appearance.m_color_diffuse));
+        visual->SetAmbient(c3d_toMbRGBA(item_appearance.m_color_ambient));
+        visual->SetSpecularity(c3d_toMbRGBA(item_appearance.m_color_specular));
+        visual->SetOpacity(item_appearance.m_transparency);
+        visual->SetShininess(item_appearance.m_shininess);
+
+        return visual;
+    }
+
+    MbUuid c3d_getUIDforMbVisual(int styleId)
+    {
+        auto item_iter = m_styleId_to_MbVisual.find(styleId);
+        if (item_iter != m_styleId_to_MbVisual.end())
+        {
+            return item_iter->second;
+        }
+        else
+        {
+            std::string guid = createGUID32();
+            std::transform(guid.begin(), guid.end(), guid.begin(), 
+                [](unsigned char c){ return std::tolower(c); });
+            string_generator gen;
+            return gen(guid);
+        }
+    }
+    
+public:
+    std::shared_ptr<MbVisual> c3d_convertAppearance(const std::vector<std::shared_ptr<AppearanceData>> & appearances, int entity_id)
+    {
+        std::shared_ptr<MbVisual> res;
+        if (!appearances.empty())
+        {
+            if (appearances.size() > 1)
+                std::cout << "Warning: multiple styles for item " << entity_id << '\n';
+            res = StylesConverter::c3d_toMbVisual(*appearances[0]);
+            auto item_iter = m_styleId_to_MbVisual.find(appearances[0]->m_step_style_id);
+            int styleId = appearances[0]->m_step_style_id;
+            MbUuid visualId = c3d_getUIDforMbVisual(styleId);
+            m_styleId_to_MbVisual.insert({styleId, visualId});
+            res->SetIdentifier(visualId);
+        }
+
+        return res;
     }
 };

@@ -837,21 +837,6 @@ public:
             {
                 if(pItem->m_pMathItem)
                 {
-                    // assign material
-                    if( !pItem->m_vec_item_appearances.empty() )
-                    {
-                        auto&& item_appearance = pItem->m_vec_item_appearances[0];
-
-                        auto vec4_diffuse = item_appearance->m_color_diffuse;
-
-                        const uint32_t hexRed = static_cast<uint32_t>(vec4_diffuse.m_r * 255);
-                        const uint32_t hexGreen = static_cast<uint32_t>(vec4_diffuse.m_g * 255) << 8;
-                        const uint32_t hexBlue = static_cast<uint32_t>(vec4_diffuse.m_b * 255) << 16;
-                        const uint32_t c = 0xff000000|hexRed|hexGreen|hexBlue;
-
-                        pItem->m_pMathItem->SetSimpleAttribute(MbColor(c));
-                    }
-
                     pItems.push_back(pItem->m_pMathItem);
                 }
             }
