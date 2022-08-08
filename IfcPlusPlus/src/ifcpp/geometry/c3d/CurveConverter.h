@@ -111,6 +111,129 @@ public:
         }
     }
 
+    // SPtr<MbCurve3D> c3d_convertIfcIndexedPolyCurve(const IfcIndexedPolyCurve& curve)
+    // {
+    //     shared_ptr<IfcCartesianPointList>& pointList = indexed_poly_curve->m_Points;
+    //     if (!pointList)
+    //     {
+    //         return {};
+    //     }
+
+
+    //     SPtr<MbCurve> res;
+    //     std::vector<MbCartPoint3D> points;
+
+    //     shared_ptr<IfcCartesianPointList2D> pointList2D = dynamic_pointer_cast<IfcCartesianPointList2D>(pointList);
+    //     if (pointList2D)
+    //     {
+    //     }
+    //     else
+    //     {
+    //         shared_ptr<IfcCartesianPointList3D> pointList3D = dynamic_pointer_cast<IfcCartesianPointList3D>(pointList);
+    //         if (pointList3D)
+    //         {
+    //             points = m_point_converter->c3d_convertIfcCartesianPointVector3D(pointList3D->m_CoordList);
+    //         }
+    //     }
+    //     const std::vector<shared_ptr<IfcSegmentIndexSelect> >& segments = indexed_poly_curve->m_Segments;                   //optional
+    //     if (segments.empty())
+    //     {
+    //         bool closed = points.front() == points.back();
+    //         res.assign(new MbPolyline3D(points, closed));
+    //     }
+    // }
+
+    void c3d_convertIfcCurve(const shared_ptr<IfcCurve>& ifc_curve)
+    {
+        if (!ifc_curve)
+        {
+            return;
+        }
+        double length_factor = m_point_converter->getUnitConverter()->getLengthInMeterFactor();
+
+        //  ENTITY IfcCurve ABSTRACT SUPERTYPE OF   (ONEOF(IfcBoundedCurve, IfcConic, IfcLine, IfcOffsetCurve2D, IfcOffsetCurve3D, IfcPCurve))
+        shared_ptr<IfcBoundedCurve> bounded_curve = dynamic_pointer_cast<IfcBoundedCurve>( ifc_curve );
+        if( bounded_curve )
+        {
+            shared_ptr<IfcCompositeCurve> composite_curve = dynamic_pointer_cast<IfcCompositeCurve>( bounded_curve );
+            if( composite_curve )
+            {
+                std::cout << "Warning: IfcCompositeCurve was not converted" << '\n';
+                // ENTITY IfcBoundedCurve ABSTRACT SUPERTYPE OF (ONEOF(IfcCompositeCurve, IfcPolyline, IfcTrimmedCurve, IfcBSplineCurve))
+                return;
+            }
+
+            shared_ptr<IfcPolyline> poly_line = dynamic_pointer_cast<IfcPolyline>( ifc_curve );
+            if( poly_line )
+            {
+                std::cout << "Warning: IfcPolyline was not converted" << '\n';
+                return;
+            }
+
+            shared_ptr<IfcTrimmedCurve> trimmed_curve = dynamic_pointer_cast<IfcTrimmedCurve>( bounded_curve );
+            if( trimmed_curve )
+            {
+                std::cout << "Warning: IfcTrimmedCurve was not converted" << '\n';
+                return;
+            }
+
+            shared_ptr<IfcBSplineCurve> bspline_curve = dynamic_pointer_cast<IfcBSplineCurve>( bounded_curve );
+            if( bspline_curve )
+            {
+                std::cout << "Warning: IfcBSplineCurve was not converted" << '\n';
+                return;
+            }
+
+            shared_ptr<IfcIndexedPolyCurve> indexed_poly_curve = dynamic_pointer_cast<IfcIndexedPolyCurve>(bounded_curve);
+            if (indexed_poly_curve)
+            {
+                std::cout << "Warning: IfcIndexedPolyCurve was not converted" << '\n';
+                return;
+            }
+            throw UnhandledRepresentationException( bounded_curve );
+        }
+
+        shared_ptr<IfcConic> conic = dynamic_pointer_cast<IfcConic>( ifc_curve );
+        if( conic )
+        {
+            std::cout << "Warning: subtypes of IfcConic(i.e. IfcCircle, IfcEllipse) were not converted" << '\n';
+            return;
+        }
+
+        shared_ptr<IfcLine> line = dynamic_pointer_cast<IfcLine>( ifc_curve );
+        if( line )
+        {
+            std::cout << "Warning: IfcLine was not converted" << '\n';
+            return;
+        }
+
+        shared_ptr<IfcOffsetCurve2D> offset_curve_2d = dynamic_pointer_cast<IfcOffsetCurve2D>( ifc_curve );
+        if( offset_curve_2d )
+        {
+            // TODO: implement
+            std::cout << "Warning: IfcOffsetCurve2D was not converted" << '\n';
+            return;
+        }
+
+        shared_ptr<IfcOffsetCurve3D> offset_curve_3d = dynamic_pointer_cast<IfcOffsetCurve3D>( ifc_curve );
+        if( offset_curve_3d )
+        {
+            // TODO: implement
+            std::cout << "Warning: IfcOffestCurve3D was not converted" << '\n';
+            return;
+        }
+
+        shared_ptr<IfcPcurve> pcurve = dynamic_pointer_cast<IfcPcurve>( ifc_curve );
+        if( pcurve )
+        {
+            // TODO: implement
+            std::cout << "Warning: IfcPcurve was not converted" << '\n';
+            return;
+        }
+
+        throw UnhandledRepresentationException( ifc_curve );      
+    }
+
     void convertIfcCurve( const shared_ptr<IfcCurve>& ifc_curve, std::vector<vec3>& loops, std::vector<vec3>& segment_start_points ) const
     {
         std::vector<shared_ptr<IfcTrimmingSelect> > trim1_vec;

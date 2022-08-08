@@ -444,7 +444,7 @@ public:
                                 if( appearance_data )
                                 {
                                     representation_data->addAppearance( appearance_data );
-                                    std::cout << "Warning: IfcPresentationLayerAssignment not supported";
+                                    std::cout << "Warning: IfcPresentationLayerAssignment not converted";
                                 }
                             }
                         }
@@ -529,25 +529,22 @@ public:
         shared_ptr<IfcCurve> ifc_curve = dynamic_pointer_cast<IfcCurve>( geom_item );
         if( ifc_curve )
         {
-            std::cout << "IfcCurve" <<std::endl;
-            /*std::vector<vec3> loops;
-            std::vector<vec3> segment_start_points;
-            m_curve_converter->convertIfcCurve( ifc_curve, loops, segment_start_points );
+            m_curve_converter->c3d_convertIfcCurve( ifc_curve );
 
-            shared_ptr<carve::input::PolylineSetData> polyline_data( new carve::input::PolylineSetData() );
-            if( !polyline_data )
-            {
-                throw OutOfMemoryException( __FUNC__ );
-            }
-            polyline_data->beginPolyline();
-            for( size_t i = 0; i < loops.size(); ++i )
-            {
-                vec3 point = loops[i];
-                polyline_data->addVertex( point );
-                polyline_data->addPolylineIndex( i );
-            }
-            item_data->m_polylines.push_back( polyline_data );
-            */
+            // shared_ptr<carve::input::PolylineSetData> polyline_data( new carve::input::PolylineSetData() );
+            // if( !polyline_data )
+            // {
+            //     throw OutOfMemoryException( __FUNC__ );
+            // }
+            // polyline_data->beginPolyline();
+            // for( size_t i = 0; i < loops.size(); ++i )
+            // {
+            //     vec3 point = loops[i];
+            //     polyline_data->addVertex( point );
+            //     polyline_data->addPolylineIndex( i );
+            // }
+            // item_data->m_polylines.push_back( polyline_data );S
+            
             return pMathItem;
         }
 
@@ -618,70 +615,73 @@ public:
         shared_ptr<IfcGeometricSet> geometric_set = dynamic_pointer_cast<IfcGeometricSet>( geom_item );
         if( geometric_set )
         {
-            // ENTITY IfcGeometricSet SUPERTYPE OF(IfcGeometricCurveSet)
-            for( auto geom_select : geometric_set->m_Elements )
-            {
-                // TYPE IfcGeometricSetSelect = SELECT (IfcPoint, IfcCurve, IfcSurface);
-                if( !geom_select )
-                {
-                    continue;
-                }
-
-                shared_ptr<IfcPoint> point = dynamic_pointer_cast<IfcPoint>( geom_select );
-                if( point )
-                {
-                    // TODO: implement
-                    std::cout << "IfcPoint" << std::endl;
-                    continue;
-                }
-
-                shared_ptr<IfcCurve> select_curve = dynamic_pointer_cast<IfcCurve>( geom_select );
-                if( select_curve )
-                {
-                    std::cout << "IfcCurve" << std::endl;
-                    /*std::vector<vec3> loops;
-                    std::vector<vec3> segment_start_points;
-                    m_curve_converter->convertIfcCurve( select_curve, loops, segment_start_points );
-
-                    shared_ptr<carve::input::PolylineSetData> polyline_data( new carve::input::PolylineSetData() );
-                    if( !polyline_data )
-                    {
-                        throw OutOfMemoryException( __FUNC__ );
-                    }
-                    polyline_data->beginPolyline();
-                    for( size_t i = 0; i < loops.size(); ++i )
-                    {
-                        vec3 loop_point = loops[i];
-                        polyline_data->addVertex(loop_point);
-                        polyline_data->addPolylineIndex( i );
-                    }
-                    item_data->m_polylines.push_back( polyline_data );
-                    */
-                    continue;
-                }
-
-                shared_ptr<IfcSurface> select_surface = dynamic_pointer_cast<IfcSurface>( geom_select );
-                if( select_surface )
-                {
-                    std::cout << "IfcSurface" << std::endl;
-                    //shared_ptr<SurfaceProxy> surface_proxy;
-                    //m_face_converter->convertIfcSurface( select_surface, item_data, surface_proxy );
-                    continue;
-                }
-            }
-
-            shared_ptr<IfcGeometricCurveSet> geometric_curve_set = dynamic_pointer_cast<IfcGeometricCurveSet>( geometric_set );
-            if( geometric_curve_set )
-            {
-                // no additional attributes
-                return pMathItem;
-            }
+            std::cout << "Warning: IfcGeometricSet not converted" << '\n';
             return pMathItem;
+            // // ENTITY IfcGeometricSet SUPERTYPE OF(IfcGeometricCurveSet)
+            // for( auto geom_select : geometric_set->m_Elements )
+            // {
+            //     // TYPE IfcGeometricSetSelect = SELECT (IfcPoint, IfcCurve, IfcSurface);
+            //     if( !geom_select )
+            //     {
+            //         continue;
+            //     }
+
+            //     shared_ptr<IfcPoint> point = dynamic_pointer_cast<IfcPoint>( geom_select );
+            //     if( point )
+            //     {
+            //         // TODO: implement
+            //         std::cout << "IfcPoint" << std::endl;
+            //         continue;
+            //     }
+
+            //     shared_ptr<IfcCurve> select_curve = dynamic_pointer_cast<IfcCurve>( geom_select );
+            //     if( select_curve )
+            //     {
+            //         std::cout << "IfcCurve" << std::endl;
+            //         /*std::vector<vec3> loops;
+            //         std::vector<vec3> segment_start_points;
+            //         m_curve_converter->convertIfcCurve( select_curve, loops, segment_start_points );
+
+            //         shared_ptr<carve::input::PolylineSetData> polyline_data( new carve::input::PolylineSetData() );
+            //         if( !polyline_data )
+            //         {
+            //             throw OutOfMemoryException( __FUNC__ );
+            //         }
+            //         polyline_data->beginPolyline();
+            //         for( size_t i = 0; i < loops.size(); ++i )
+            //         {
+            //             vec3 loop_point = loops[i];
+            //             polyline_data->addVertex(loop_point);
+            //             polyline_data->addPolylineIndex( i );
+            //         }
+            //         item_data->m_polylines.push_back( polyline_data );
+            //         */
+            //         continue;
+            //     }
+
+            //     shared_ptr<IfcSurface> select_surface = dynamic_pointer_cast<IfcSurface>( geom_select );
+            //     if( select_surface )
+            //     {
+            //         std::cout << "IfcSurface" << std::endl;
+            //         //shared_ptr<SurfaceProxy> surface_proxy;
+            //         //m_face_converter->convertIfcSurface( select_surface, item_data, surface_proxy );
+            //         continue;
+            //     }
+            // }
+
+            // shared_ptr<IfcGeometricCurveSet> geometric_curve_set = dynamic_pointer_cast<IfcGeometricCurveSet>( geometric_set );
+            // if( geometric_curve_set )
+            // {
+            //     // no additional attributes
+            //     return pMathItem;
+            // }
+            // return pMathItem;
         }
 
         shared_ptr<IfcSectionedSpine> sectioned_spine = dynamic_pointer_cast<IfcSectionedSpine>( geom_item );
         if( sectioned_spine )
         {
+            std::cout << "Warning: IfcSectionedSpine not converted" << '\n';
             //m_solid_converter->convertIfcSectionedSpine( sectioned_spine, item_data );
             return pMathItem;
         }
@@ -731,6 +731,7 @@ public:
 
                 item_data->m_vec_text_literals.push_back( text_item_data );
             }*/
+            std::cout << "Warning: IfcTextLiteral not converted" << '\n';
             return pMathItem;
         }
 
@@ -764,26 +765,30 @@ public:
             m_sweeper->createTriangulated3DFace( face_loops, outer_boundary.get(), poly_cache );
             item_data->addOpenPolyhedron( poly_cache.m_poly_data );
             */
+            std::cout << "Warning: IfcAnnotationFillArea not converted" << '\n';
             return pMathItem;
         }
 
         shared_ptr<IfcPoint> ifc_point = dynamic_pointer_cast<IfcPoint>( geom_item );
         if( ifc_point )
         {
+            std::cout << "Warning: IfcPoint not converted" << '\n';
+            return pMathItem;
+
             // ENTITY IfcPoint ABSTRACT SUPERTYPE OF( ONEOF ( IfcCartesianPoint, IfcPointOnCurve, IfcPointOnSurface ) )
-            shared_ptr<IfcCartesianPoint> ifc_cartesian_point = dynamic_pointer_cast<IfcCartesianPoint>( geom_item );
-            if( ifc_cartesian_point )
-            {
-                /*
-                vec3 point;
-                const double length_factor = m_unit_converter->getLengthInMeterFactor();
-                if( PointConverter::convertIfcCartesianPoint( ifc_cartesian_point, point, length_factor ) )
-                {
-                    item_data->addPoint( point );
-                }
-                */
-                return pMathItem;
-            }
+            // shared_ptr<IfcCartesianPoint> ifc_cartesian_point = dynamic_pointer_cast<IfcCartesianPoint>( geom_item );
+            // if( ifc_cartesian_point )
+            // {
+            //     /*
+            //     vec3 point;
+            //     const double length_factor = m_unit_converter->getLengthInMeterFactor();
+            //     if( PointConverter::convertIfcCartesianPoint( ifc_cartesian_point, point, length_factor ) )
+            //     {
+            //         item_data->addPoint( point );
+            //     }
+            //     */
+            //     return pMathItem;
+            // }
         }
 
         shared_ptr<IfcTessellatedItem> ifc_tessel_item = dynamic_pointer_cast<IfcTessellatedItem>( geom_item );

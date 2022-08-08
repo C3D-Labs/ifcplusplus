@@ -314,4 +314,31 @@ public:
         }
         return result_angle;
     }
+
+    std::vector<MbCartPoint> c3d_convertIfcCartesianPointVector2D(const std::vector<shared_ptr<IfcCartesianPoint> >& points)
+    {
+        const double length_factor = m_unit_converter->getLengthInMeterFactor();
+        auto op = [length_factor](const auto& ifcPoint)
+        {
+            const std::vector<shared_ptr<IfcLengthMeasure>>& coords = ifcPoint->m_Coordinates;
+            return MbCartPoint(coords[0]->m_value * length_factor, coords[1]->m_value * length_factor);
+        };
+        std::vector<MbCartPoint> res;
+        std::transform(points.begin(), points.end(), std::back_inserter(res), op);
+
+        return res;
+    }
+    std::vector<MbCartPoint3D> c3d_convertIfcCartesianPointVector3D(const std::vector<shared_ptr<IfcCartesianPoint> >& points)
+    {
+        const double length_factor = m_unit_converter->getLengthInMeterFactor();
+        auto op = [length_factor](const auto& ifcPoint)
+        {
+            const std::vector<shared_ptr<IfcLengthMeasure>>& coords = ifcPoint->m_Coordinates;
+            return MbCartPoint3D(coords[0]->m_value * length_factor, coords[1]->m_value * length_factor, coords[2]->m_value * length_factor);
+        };
+        std::vector<MbCartPoint3D> res;
+        std::transform(points.begin(), points.end(), std::back_inserter(res), op);
+
+        return res;
+    }
 };
