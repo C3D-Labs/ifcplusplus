@@ -312,7 +312,8 @@ int main(int ac, char *av[])
     std::string  model_uuid;
     NodeTreeItem root_item;
 
-    auto task_  = monitor_api->getStatus()
+    auto task_  = //monitor_api->getStatus()
+    pplx::create_task([]{})
     // check service
     .then([&]{
         std::cout << "Servce is active" << std::endl;

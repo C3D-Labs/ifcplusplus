@@ -194,7 +194,7 @@ public:
                 surface_color.setColor(0.11, 0.12, 0.13, surface_color.a());
             }
 
-            vec4 ambient_color(surface_color);
+            vec4 ambient_color(0.1,0.1,0.1,1.0);
             vec4 diffuse_color(surface_color);
             vec4 specular_color(surface_color);
             double shininess = 35.f;

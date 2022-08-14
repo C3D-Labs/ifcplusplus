@@ -689,7 +689,7 @@ public:
             {
                 if( transform )
                 {
-                    transform_matrix = transform->m_matrix*transform_matrix;
+                    transform_matrix = transform_matrix * transform->m_matrix;
                 }
             }
         }
