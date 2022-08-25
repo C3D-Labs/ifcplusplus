@@ -81,6 +81,15 @@ public:
 
     void setBuilder(const utility::string_t& value);
 
+    /// <summary>
+    /// UUID to assign geometry
+    /// </summary>
+    utility::string_t getUuid() const;
+    bool uuidIsSet() const;
+    void unsetUuid();
+
+    void setUuid(const utility::string_t& value);
+
 
 protected:
     utility::string_t m_Url;
@@ -89,6 +98,8 @@ protected:
     bool m_FileContentIsSet;
     utility::string_t m_Builder;
     bool m_BuilderIsSet;
+    utility::string_t m_Uuid;
+    bool m_UuidIsSet;
 };
 
 

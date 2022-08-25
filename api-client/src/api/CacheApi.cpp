@@ -36,14 +36,8 @@ CacheApi::~CacheApi()
 {
 }
 
-pplx::task<utility::string_t> CacheApi::cacheComposeModel(std::shared_ptr<ComposeModelNode> data) const
+pplx::task<utility::string_t> CacheApi::cacheComposeModel(boost::optional<std::shared_ptr<CacheComposeModel_request>> data) const
 {
-
-    // verify the required parameter 'data' is set
-    if (data == nullptr)
-    {
-        throw ApiException(400, utility::conversions::to_string_t("Missing required parameter 'data' when calling CacheApi->cacheComposeModel"));
-    }
 
 
     std::shared_ptr<const ApiConfiguration> localVarApiConfiguration( m_ApiClient->getConfiguration() );
@@ -99,8 +93,8 @@ pplx::task<utility::string_t> CacheApi::cacheComposeModel(std::shared_ptr<Compos
         localVarRequestHttpContentType = utility::conversions::to_string_t("application/json");
         web::json::value localVarJson;
 
-        localVarJson = ModelBase::toJson(data);
-        
+        if (data)
+            localVarJson = ModelBase::toJson(*data);
 
         localVarHttpBody = std::shared_ptr<IHttpBody>( new JsonBody( localVarJson ) );
     }
@@ -110,9 +104,9 @@ pplx::task<utility::string_t> CacheApi::cacheComposeModel(std::shared_ptr<Compos
         localVarRequestHttpContentType = utility::conversions::to_string_t("multipart/form-data");
         std::shared_ptr<MultipartFormData> localVarMultipart(new MultipartFormData);
 
-        if(data.get())
+        if(data && (*data).get())
         {
-            data->toMultipart(localVarMultipart, utility::conversions::to_string_t("data"));
+            (*data)->toMultipart(localVarMultipart, utility::conversions::to_string_t("data"));
         }
         
 
@@ -853,7 +847,7 @@ pplx::task<std::shared_ptr<CachedModel>> CacheApi::getCache(boost::optional<std:
         return localVarResult;
     });
 }
-pplx::task<std::shared_ptr<CachedModel>> CacheApi::getGeometry(utility::string_t geometryUUID, boost::optional<std::shared_ptr<CachedModel>> model) const
+pplx::task<std::shared_ptr<CachedModel>> CacheApi::getGeometry(utility::string_t geometryUUID) const
 {
 
 
@@ -894,7 +888,6 @@ pplx::task<std::shared_ptr<CachedModel>> CacheApi::getGeometry(utility::string_t
     localVarHeaderParams[utility::conversions::to_string_t("Accept")] = localVarResponseHttpContentType;
 
     std::unordered_set<utility::string_t> localVarConsumeHttpContentTypes;
-    localVarConsumeHttpContentTypes.insert( utility::conversions::to_string_t("application/json") );
 
 
     std::shared_ptr<IHttpBody> localVarHttpBody;
@@ -904,27 +897,11 @@ pplx::task<std::shared_ptr<CachedModel>> CacheApi::getGeometry(utility::string_t
     if ( localVarConsumeHttpContentTypes.size() == 0 || localVarConsumeHttpContentTypes.find(utility::conversions::to_string_t("application/json")) != localVarConsumeHttpContentTypes.end() )
     {
         localVarRequestHttpContentType = utility::conversions::to_string_t("application/json");
-        web::json::value localVarJson;
-
-        if (model)
-            localVarJson = ModelBase::toJson(*model);
-
-        localVarHttpBody = std::shared_ptr<IHttpBody>( new JsonBody( localVarJson ) );
     }
     // multipart formdata
     else if( localVarConsumeHttpContentTypes.find(utility::conversions::to_string_t("multipart/form-data")) != localVarConsumeHttpContentTypes.end() )
     {
         localVarRequestHttpContentType = utility::conversions::to_string_t("multipart/form-data");
-        std::shared_ptr<MultipartFormData> localVarMultipart(new MultipartFormData);
-
-        if(model && (*model).get())
-        {
-            (*model)->toMultipart(localVarMultipart, utility::conversions::to_string_t("model"));
-        }
-        
-
-        localVarHttpBody = localVarMultipart;
-        localVarRequestHttpContentType += utility::conversions::to_string_t("; boundary=") + localVarMultipart->getBoundary();
     }
     else if (localVarConsumeHttpContentTypes.find(utility::conversions::to_string_t("application/x-www-form-urlencoded")) != localVarConsumeHttpContentTypes.end())
     {

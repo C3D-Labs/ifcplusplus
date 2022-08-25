@@ -346,7 +346,7 @@ int main(int ac, char *av[])
                 // save MbItem to c3d buffer
                 c3d::C3DExchangeBuffer buffer;
                 MbeConvResType res = c3d::ExportIntoBuffer(*pMathItem, mxf_C3D, buffer);
-                std::string geom_uuid;
+                std::string geom_uuid = createGUID32();
 
                 if(res != MbeConvResType::cnv_Success){
                     std::cerr << "Error save to buffer " << res << std::endl;
@@ -358,6 +358,7 @@ int main(int ac, char *av[])
                     std::string base64 = base64_encode(reinterpret_cast<const unsigned char*>(buffer.Data()), buffer.Count(), false );
                     request->setFileContent(base64);
                     request->setBuilder("c3d");
+                    request->setUuid(geom_uuid);
 
                     cache_api->cacheGeometry(request)
                     .then([&](std::string uuidGeom){
@@ -366,7 +367,7 @@ int main(int ac, char *av[])
                             std::this_thread::sleep_for(20ms);
                             double progress = 0.0;
                             try{
-                                auto status = cache_api->getGeometry(geom_uuid,{}).get();
+                                auto status = cache_api->getGeometry(geom_uuid).get();
                                 progress = status->getProgress();
                             }
                             catch(...)
@@ -412,7 +413,12 @@ int main(int ac, char *av[])
 
         if(root_item.web_item && sendToService)
         {
-            auto task = cache_api->cacheComposeModel(root_item.web_item);
+            model_uuid = createGUID32();
+            auto data = std::make_shared<api::CacheComposeModel_request>();
+            data->setRoot(root_item.web_item);
+            data->setUuid(model_uuid);
+
+            auto task = cache_api->cacheComposeModel(data);
             model_uuid = task.get();
             std::cout << "model UUID: " << model_uuid << std::endl;
         }

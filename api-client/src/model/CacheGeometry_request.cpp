@@ -28,6 +28,8 @@ CacheGeometry_request::CacheGeometry_request()
     m_FileContentIsSet = false;
     m_Builder = utility::conversions::to_string_t("");
     m_BuilderIsSet = false;
+    m_Uuid = utility::conversions::to_string_t("");
+    m_UuidIsSet = false;
 }
 
 CacheGeometry_request::~CacheGeometry_request()
@@ -55,6 +57,10 @@ web::json::value CacheGeometry_request::toJson() const
     if(m_BuilderIsSet)
     {
         val[utility::conversions::to_string_t(U("builder"))] = ModelBase::toJson(m_Builder);
+    }
+    if(m_UuidIsSet)
+    {
+        val[utility::conversions::to_string_t(U("uuid"))] = ModelBase::toJson(m_Uuid);
     }
 
     return val;
@@ -94,6 +100,16 @@ bool CacheGeometry_request::fromJson(const web::json::value& val)
             setBuilder(refVal_setBuilder);
         }
     }
+    if(val.has_field(utility::conversions::to_string_t(U("uuid"))))
+    {
+        const web::json::value& fieldValue = val.at(utility::conversions::to_string_t(U("uuid")));
+        if(!fieldValue.is_null())
+        {
+            utility::string_t refVal_setUuid;
+            ok &= ModelBase::fromJson(fieldValue, refVal_setUuid);
+            setUuid(refVal_setUuid);
+        }
+    }
     return ok;
 }
 
@@ -115,6 +131,10 @@ void CacheGeometry_request::toMultipart(std::shared_ptr<MultipartFormData> multi
     if(m_BuilderIsSet)
     {
         multipart->add(ModelBase::toHttpContent(namePrefix + utility::conversions::to_string_t(U("builder")), m_Builder));
+    }
+    if(m_UuidIsSet)
+    {
+        multipart->add(ModelBase::toHttpContent(namePrefix + utility::conversions::to_string_t(U("uuid")), m_Uuid));
     }
 }
 
@@ -144,6 +164,12 @@ bool CacheGeometry_request::fromMultiPart(std::shared_ptr<MultipartFormData> mul
         utility::string_t refVal_setBuilder;
         ok &= ModelBase::fromHttpContent(multipart->getContent(utility::conversions::to_string_t(U("builder"))), refVal_setBuilder );
         setBuilder(refVal_setBuilder);
+    }
+    if(multipart->hasContent(utility::conversions::to_string_t(U("uuid"))))
+    {
+        utility::string_t refVal_setUuid;
+        ok &= ModelBase::fromHttpContent(multipart->getContent(utility::conversions::to_string_t(U("uuid"))), refVal_setUuid );
+        setUuid(refVal_setUuid);
     }
     return ok;
 }
@@ -207,6 +233,26 @@ bool CacheGeometry_request::builderIsSet() const
 void CacheGeometry_request::unsetBuilder()
 {
     m_BuilderIsSet = false;
+}
+utility::string_t CacheGeometry_request::getUuid() const
+{
+    return m_Uuid;
+}
+
+void CacheGeometry_request::setUuid(const utility::string_t& value)
+{
+    m_Uuid = value;
+    m_UuidIsSet = true;
+}
+
+bool CacheGeometry_request::uuidIsSet() const
+{
+    return m_UuidIsSet;
+}
+
+void CacheGeometry_request::unsetUuid()
+{
+    m_UuidIsSet = false;
 }
 }
 }

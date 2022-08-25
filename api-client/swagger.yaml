@@ -189,7 +189,7 @@ paths:
       consumes:
         - "application/json"
       produces:
-        - text/plain
+        - "text/plain"
       parameters:
       - in: body
         name: body
@@ -211,6 +211,10 @@ paths:
               type: string
               description: "Reader to read data"
               example: "c3d"
+            uuid:
+              type: string
+              format: uuid
+              description: "UUID to assign geometry"
       responses:
         202: # Accepted
           description: "Процесс генерации успешно запущен."
@@ -240,16 +244,8 @@ paths:
       - "Cache"
       summary: "Получить информацию о кеше геометрии"
       operationId: "getGeometry"
-      consumes:
-        - "application/json"
       produces:
         - "application/json"
-      parameters:
-      - in: body
-        name: model
-        description: "Необходимые данные для идентификации кэша"
-        schema:
-          $ref: "#/definitions/CachedModel"
       responses:
         200: # OK
           description: "Кэш для указанной геометрии успешно найден, и для него получены сведения"
@@ -262,7 +258,7 @@ paths:
             example: "input URL format is invalid"
             description: "Причина неудачи"
         404: # Not Found
-          description: "Данная модель не существует, еще не была кэширована или произошла ошибка во время кэширования"
+          description: "Данная геометрия не существует, еще не была кэширована или произошла ошибка во время кэширования"
         500: # Internal Service Error
           description: "Во время обработки запроса возникла ошибка в работе сервиса"
 
@@ -281,9 +277,9 @@ paths:
           $ref: "#/definitions/CachedModel"
       responses:
         200: # OK
-          description: "Кэш для указанной моделей успешно очищен, либо не существовал"
+          description: "Кэш для указанной геометрии успешно очищен, либо не существовал"
         404: # Not Found          
-          description: "Данная модель не существует, еще не была кэширована или произошла ошибка во время кэширования"
+          description: "Данная геометрия не существует, еще не была кэширована или произошла ошибка во время кэширования"
         400: # Bad Request
           description: "Не удалось выполнить запрос. Ошибка в предоставленных данных."
           schema:
@@ -410,14 +406,19 @@ paths:
       consumes:
         - "application/json"
       produces:
-        - text/plain
+        - "text/plain"
       parameters:
       - in: body
         name: data
-        description: "Необходимые данные для выполнения запроса"
-        required: true
-        schema: 
-          $ref: '#/definitions/ComposeModelNode'
+        schema:
+          type: object
+          properties:
+            uuid:
+              type: string
+              format: uuid
+              description: "UUID to assign model"
+            root: 
+              $ref: '#/definitions/ComposeModelNode'
       responses:
         200: # OK
           description: "Модель удачно создана"

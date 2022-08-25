@@ -23,10 +23,10 @@
 
 #include "c3dservice-api/ApiClient.h"
 
+#include "c3dservice-api/model/CacheComposeModel_request.h"
 #include "c3dservice-api/model/CacheGeometry_request.h"
 #include "c3dservice-api/model/CacheModel_request.h"
 #include "c3dservice-api/model/CachedModel.h"
-#include "c3dservice-api/model/ComposeModelNode.h"
 #include <cpprest/details/basic_types.h>
 #include <boost/optional.hpp>
 
@@ -53,9 +53,9 @@ public:
     /// <remarks>
     /// 
     /// </remarks>
-    /// <param name="data">Необходимые данные для выполнения запроса</param>
+    /// <param name="data"> (optional)</param>
     pplx::task<utility::string_t> cacheComposeModel(
-        std::shared_ptr<ComposeModelNode> data
+        boost::optional<std::shared_ptr<CacheComposeModel_request>> data
     ) const;
     /// <summary>
     /// Сгенерировать кэш для графического представления геометрии
@@ -116,10 +116,8 @@ public:
     /// 
     /// </remarks>
     /// <param name="geometryUUID">Идентификатор геометрии</param>
-    /// <param name="model">Необходимые данные для идентификации кэша (optional)</param>
     pplx::task<std::shared_ptr<CachedModel>> getGeometry(
-        utility::string_t geometryUUID,
-        boost::optional<std::shared_ptr<CachedModel>> model
+        utility::string_t geometryUUID
     ) const;
 
 protected:

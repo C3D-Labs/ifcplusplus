@@ -17,6 +17,7 @@ include/c3dservice-api/api/ModelApi.h
 include/c3dservice-api/api/MonitorApi.h
 include/c3dservice-api/api/SessionApi.h
 include/c3dservice-api/model/AppendModelsBody.h
+include/c3dservice-api/model/CacheComposeModel_request.h
 include/c3dservice-api/model/CacheGeometry_request.h
 include/c3dservice-api/model/CacheModel_request.h
 include/c3dservice-api/model/CachedModel.h
@@ -43,6 +44,7 @@ src/api/ModelApi.cpp
 src/api/MonitorApi.cpp
 src/api/SessionApi.cpp
 src/model/AppendModelsBody.cpp
+src/model/CacheComposeModel_request.cpp
 src/model/CacheGeometry_request.cpp
 src/model/CacheModel_request.cpp
 src/model/CachedModel.cpp
