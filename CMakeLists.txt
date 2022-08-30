@@ -23,3 +23,5 @@ target_link_libraries(${TARGET_NAME} PRIVATE
     c3d
     pthread
     )
+
+target_compile_definitions(${TARGET_NAME} PRIVATE UNICODE _UNICODE)

@@ -27,7 +27,8 @@
 
 #include "conv_exchange_settings.h"
 #include "conv_model_exchange.h"
-#include <tool_enabler.h>
+#include "tool_enabler.h"
+#include "attr_common_attribute.h"
 
 #include "base64.h"
 #include "boost/program_options.hpp"
@@ -163,8 +164,9 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
             if( auto&& shape = geoms(ifc_product->m_GlobalId->toString()) )
             {
 
-                if( shape->m_pMathItem){
+                if(shape->m_pMathItem){
                     
+                    auto pMathItem = shape->m_pMathItem;
                     // assign the 3d geometry to the node
                     item.rep_uuid = shape->m_math_uuid;
                     // generate UUID for the node, to using the item in Web visualization
@@ -173,10 +175,17 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
                     placement.Init(shape->getTransform());
 
                     if(placement.IsTranslation()||placement.IsRotation()){
-                        math_children.push_back(SPtr<MbInstance>(new MbInstance(*shape->m_pMathItem, placement)));
+                        pMathItem = SPtr<MbInstance>(new MbInstance(*shape->m_pMathItem, placement));
+                        math_children.push_back(pMathItem);
                     } else {
                         math_children.push_back(shape->m_pMathItem);
                     }
+
+                    C3DCharEncodingTransformerLocale conv;
+                    c3d::string_t value;
+                    conv.StdToC3D(item.item_uuid, value);
+                    SPtr<MbStringAttribute> ptr(new MbStringAttribute(L"product_uuid",false, value));
+                    pMathItem->AddAttribute(*ptr);
                 }
             }
 
