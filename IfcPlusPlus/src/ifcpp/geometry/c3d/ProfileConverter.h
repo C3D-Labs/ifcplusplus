@@ -348,7 +348,7 @@ public:
             for( size_t j = 0; j < loop_parent.size(); ++j )
             {
                 const vec2& pt = loop_parent[j];
-                vec3 pt3d( pt.x, pt.y, 0 );
+                MbCartPoint3D pt3d( pt.x, pt.y, 0 );
                 if( transform )
                 {
                     pt3d = pt3d*transform->m_matrix;
@@ -370,18 +370,17 @@ public:
             shared_ptr<TransformData> transform;
             m_curve_converter->getPlcamentConverter()->convertIfcPlacement( axis2Placement2D, transform );
 
+
             for( size_t i = 0; i < temp_paths.size(); ++i )
             {
                 std::vector<vec2>& path_loop = temp_paths[i];
                 for( size_t j = 0; j < path_loop.size(); ++j )
                 {
                     vec2& pt = path_loop[j];
-                    vec3 pt_3d( pt.x, pt.y, 0 );
+                    MbCartPoint3D pt_3d( pt.x, pt.y, 0 );
                     if( transform )
-                    {
-                        pt_3d = pt_3d*transform->m_matrix;
-                    }
-                    pt.x = pt_3d.x;
+                        pt_3d.Transform(transform->m_matrix);
+                    pt.x = pt_3d.x ;
                     pt.y = pt_3d.y;
                 }
                 paths.push_back( path_loop );

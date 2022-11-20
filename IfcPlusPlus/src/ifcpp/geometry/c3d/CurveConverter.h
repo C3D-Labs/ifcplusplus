@@ -490,7 +490,7 @@ public:
                 vec3 circle_center;
                 if( conic_position_matrix )
                 {
-                    circle_center = vec3( 0, 0, 0 )*conic_position_matrix->m_matrix;
+                    circle_center = MbCartPoint3D( 0, 0, 0 )*conic_position_matrix->m_matrix;
                 }
 
                 double trim_angle1 = 0.0;
@@ -620,7 +620,7 @@ public:
                     for( size_t i = 0; i < circle_points.size(); ++i )
                     {
                         vec2&  point = circle_points[i];
-                        vec3  point3D( vec3( point.x, point.y, 0 ) );
+                        MbCartPoint3D  point3D( point.x, point.y, 0 );
                         if( conic_position_matrix )
                         {
                             point3D = point3D * conic_position_matrix->m_matrix;
