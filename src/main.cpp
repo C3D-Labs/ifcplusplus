@@ -161,6 +161,10 @@ NodeTreeItem resolveTreeItems(shared_ptr<BuildingObject> obj, std::unordered_set
         std::shared_ptr<IfcProduct> ifc_product = dynamic_pointer_cast<IfcProduct>(obj_def);
         if(ifc_product)
         {
+            if( dynamic_pointer_cast<IfcSpace>(ifc_product) ){
+                // skip IfcSpace
+            }
+            else
             if( auto&& shape = geoms(ifc_product->m_GlobalId->toString()) )
             {
 
